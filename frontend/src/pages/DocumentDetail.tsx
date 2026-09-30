@@ -25,6 +25,8 @@ import { ExtractionDataGrid } from '../components/ExtractionDataGrid';
 import { ConfidenceRing } from '../components/ConfidenceRing';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { GlassDrawer } from '../components/GlassDrawer';
+import { GitCompare } from 'lucide-react';
 
 export const DocumentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -169,12 +171,22 @@ export const DocumentDetail: React.FC = () => {
 
           <button
             type="button"
+            onClick={() => navigate(`/compare?docA=${document.id}`)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-semibold transition-colors btn-interactive"
+            title="Compare this document with another version"
+          >
+            <GitCompare className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden sm:inline">Compare</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setTimelineOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors btn-interactive"
             title="View Real Activity Timeline"
           >
             <History className="w-3.5 h-3.5 text-brand-400" />
-            <span className="hidden sm:inline">Activity Timeline</span>
+            <span className="hidden sm:inline">Timeline</span>
           </button>
 
           {/* Mobile View Toggle Switch */}
@@ -276,107 +288,93 @@ export const DocumentDetail: React.FC = () => {
         </div>
       </ErrorBoundary>
 
-      {/* Real Activity Timeline Modal */}
-      {timelineOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in"
-          onClick={() => setTimelineOpen(false)}
-        >
-          <div
-            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-6"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-brand-500/10 text-brand-400 border border-brand-500/20">
-                  <History className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">Document Lifecycle Timeline</h3>
-                  <p className="text-xs text-slate-400 font-mono">ID: {document.id}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setTimelineOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      {/* Real Activity Timeline Drawer */}
+      <GlassDrawer
+        isOpen={timelineOpen}
+        onClose={() => setTimelineOpen(false)}
+        title={
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-brand-500/10 text-brand-400 border border-brand-500/20">
+              <History className="w-5 h-5" />
+            </div>
+            <span>Document Lifecycle Timeline</span>
+          </div>
+        }
+        subtitle={<span className="font-mono text-xs text-slate-400">ID: {document.id}</span>}
+        width="md"
+      >
+        <div className="space-y-6">
+          {/* Real Pipeline Progression */}
+          <div className="relative border-l-2 border-slate-800 ml-4 space-y-6 py-2">
+            {/* Event 1: Ingestion */}
+            <div className="relative pl-6">
+              <div className="absolute -left-1.5 top-1 w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-slate-900" />
+              <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                Document Ingested
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Binary payload uploaded ({((document.file_size_bytes || 0) / 1024).toFixed(1)} KB) and validated.
+              </p>
+              <p className="text-[10px] text-slate-500 font-mono mt-1">
+                {new Date(document.created_at).toLocaleString()}
+              </p>
             </div>
 
-            {/* Real Pipeline Progression */}
-            <div className="relative border-l-2 border-slate-800 ml-4 space-y-6 py-2">
-              {/* Event 1: Ingestion */}
-              <div className="relative pl-6">
-                <div className="absolute -left-1.5 top-1 w-3 h-3 rounded-full bg-emerald-500 ring-4 ring-slate-900" />
-                <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                  Document Ingested
-                </h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  Binary payload uploaded ({((document.file_size_bytes || 0) / 1024).toFixed(1)} KB) and validated.
-                </p>
-                <p className="text-[10px] text-slate-500 font-mono mt-1">
-                  {new Date(document.created_at).toLocaleString()}
-                </p>
-              </div>
-
-              {/* Event 2: Gemini 2.0 Vision OCR */}
-              <div className="relative pl-6">
-                <div className="absolute -left-1.5 top-1 w-3 h-3 rounded-full bg-brand-500 ring-4 ring-slate-900" />
-                <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                  Gemini 2.0 Multimodal Analysis
-                </h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  Full-page visual OCR completed. Classified as <strong className="text-white">{document.document_class || 'General'}</strong> with {Math.round((document.overall_confidence || 0) * 100)}% overall confidence.
-                </p>
-                <p className="text-[10px] text-slate-500 font-mono mt-1">
-                  Automated Multimodal Pipeline
-                </p>
-              </div>
-
-              {/* Event 3: Statistical Validation */}
-              <div className="relative pl-6">
-                <div className={`absolute -left-1.5 top-1 w-3 h-3 rounded-full ring-4 ring-slate-900 ${flaggedFields.length > 0 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-                <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                  Confidence & Anomaly Analysis
-                </h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  {flaggedFields.length > 0
-                    ? `${flaggedFields.length} field(s) fell below the 85% validation threshold and were routed to human review.`
-                    : 'All extracted entities met or exceeded the 85% automated confidence threshold.'}
-                </p>
-              </div>
-
-              {/* Event 4: Current Status */}
-              <div className="relative pl-6">
-                <div className={`absolute -left-1.5 top-1 w-3 h-3 rounded-full ring-4 ring-slate-900 ${document.status === 'verified' ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
-                <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                  {document.status === 'verified' ? 'Human Verified & Approved' : 'Pending Human Verification'}
-                </h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  {document.status === 'verified'
-                    ? 'All extracted entities have been verified and approved for downstream ERP export.'
-                    : 'Document is currently in the Review Queue awaiting human sign-off.'}
-                </p>
-                <p className="text-[10px] text-slate-500 font-mono mt-1">
-                  Last updated {new Date(document.updated_at || document.created_at).toLocaleString()}
-                </p>
-              </div>
+            {/* Event 2: Gemini 2.0 Vision OCR */}
+            <div className="relative pl-6">
+              <div className="absolute -left-1.5 top-1 w-3 h-3 rounded-full bg-brand-500 ring-4 ring-slate-900" />
+              <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                Gemini 2.0 Multimodal Analysis
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Full-page visual OCR completed. Classified as <strong className="text-white">{document.document_class || 'General'}</strong> with {Math.round((document.overall_confidence || 0) * 100)}% overall confidence.
+              </p>
+              <p className="text-[10px] text-slate-500 font-mono mt-1">
+                Automated Multimodal Pipeline
+              </p>
             </div>
 
-            <div className="pt-2 text-right">
-              <button
-                type="button"
-                onClick={() => setTimelineOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
-              >
-                Close
-              </button>
+            {/* Event 3: Statistical Validation */}
+            <div className="relative pl-6">
+              <div className={`absolute -left-1.5 top-1 w-3 h-3 rounded-full ring-4 ring-slate-900 ${flaggedFields.length > 0 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+              <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                Confidence & Anomaly Analysis
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {flaggedFields.length > 0
+                  ? `${flaggedFields.length} field(s) fell below the 85% validation threshold and were routed to human review.`
+                  : 'All extracted entities met or exceeded the 85% automated confidence threshold.'}
+              </p>
+            </div>
+
+            {/* Event 4: Current Status */}
+            <div className="relative pl-6">
+              <div className={`absolute -left-1.5 top-1 w-3 h-3 rounded-full ring-4 ring-slate-900 ${document.status === 'verified' ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
+              <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                {document.status === 'verified' ? 'Human Verified & Approved' : 'Pending Human Verification'}
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {document.status === 'verified'
+                  ? 'All extracted entities have been verified and approved for downstream ERP export.'
+                  : 'Document is currently in the Review Queue awaiting human sign-off.'}
+              </p>
+              <p className="text-[10px] text-slate-500 font-mono mt-1">
+                Last updated {new Date(document.updated_at || document.created_at).toLocaleString()}
+              </p>
             </div>
           </div>
+
+          <div className="pt-4 border-t border-slate-800 text-right">
+            <button
+              type="button"
+              onClick={() => setTimelineOpen(false)}
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
+            >
+              Close
+            </button>
+          </div>
         </div>
-      )}
+      </GlassDrawer>
     </div>
   );
 };

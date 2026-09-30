@@ -22,6 +22,8 @@ import { HelpCenter } from './pages/HelpCenter';
 import { PresentationMode } from './pages/PresentationMode';
 import { About } from './pages/About';
 import { NotFound } from './pages/NotFound';
+import { DocumentComparison } from './pages/DocumentComparison';
+import { BackgroundDepth } from './components/BackgroundDepth';
 import { Loader2 } from 'lucide-react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -92,6 +94,9 @@ export const AppContent: React.FC = () => {
 
   return (
     <>
+      {/* Background Depth Ambient Blobs (Phase 8) */}
+      <BackgroundDepth />
+
       {/* Ambient Liquid Cursor Glow */}
       <CursorLight />
 
@@ -137,6 +142,18 @@ export const AppContent: React.FC = () => {
               onStartTour={() => setTourOpen(true)}
             >
               <ReviewCenter />
+            </ProtectedLayout>
+          }
+        />
+        <Route
+          path="/compare"
+          element={
+            <ProtectedLayout 
+              onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+              onOpenShortcuts={() => setShortcutsModalOpen(true)}
+              onStartTour={() => setTourOpen(true)}
+            >
+              <DocumentComparison />
             </ProtectedLayout>
           }
         />

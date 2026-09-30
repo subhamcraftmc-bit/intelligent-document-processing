@@ -190,6 +190,119 @@ const seedInitialData = () => {
     });
   });
 
+  // Seed 4: Document A (Controlled Comparison Original: Amount ₹1,250, Tax ₹100)
+  const doc4Id = 'b4444444-4444-4444-4444-444444444444';
+  mockStore.documents.set(doc4Id, {
+    id: doc4Id,
+    user_id: userId,
+    file_name: 'Store_Receipt_Original_v1.pdf',
+    file_url: 'https://images.unsplash.com/photo-1559496417-e7f25cb247f3?auto=format&fit=crop&w=1200&q=80',
+    storage_path: 'demo/receipt_v1.pdf',
+    file_type: 'application/pdf',
+    file_size_bytes: 145200,
+    document_class: 'Receipt',
+    status: 'verified',
+    overall_confidence: 0.96,
+    created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
+    updated_at: new Date(Date.now() - 3600000 * 48).toISOString()
+  });
+
+  mockStore.extractions.set(doc4Id, {
+    id: uuidv4(),
+    document_id: doc4Id,
+    extracted_data: {
+      document_class: 'Receipt',
+      overall_confidence: 0.96,
+      summary: 'Original purchase receipt from ABC Store (Version 1.0).',
+      line_items: [
+        { description: 'Fresh Whole Milk', quantity: 1, unit_price: 60.00, total: 60.00 },
+        { description: 'Organic Sourdough Bread', quantity: 1, unit_price: 140.00, total: 140.00 }
+      ]
+    },
+    created_at: new Date(Date.now() - 3600000 * 48).toISOString()
+  });
+
+  const doc4Fields = [
+    { key: 'merchant_name', val: 'ABC Store', conf: 0.99, flag: false },
+    { key: 'transaction_date', val: '12/08/26', conf: 0.97, flag: false },
+    { key: 'subtotal_amount', val: '₹1,150', conf: 0.95, flag: false },
+    { key: 'tax_amount', val: '₹100', conf: 0.94, flag: false },
+    { key: 'total_amount', val: '₹1,250', conf: 0.98, flag: false },
+    { key: 'payment_method', val: 'Cash', conf: 0.92, flag: false },
+    { key: 'discount_code', val: 'SUMMER10', conf: 0.88, flag: false } // Field only in A -> REMOVED
+  ];
+
+  doc4Fields.forEach(f => {
+    const fId = uuidv4();
+    mockStore.fields.set(fId, {
+      id: fId,
+      document_id: doc4Id,
+      field_key: f.key,
+      field_value: f.val,
+      confidence: f.conf,
+      is_flagged: f.flag,
+      human_corrected: false,
+      created_at: new Date(Date.now() - 3600000 * 48).toISOString()
+    });
+  });
+
+  // Seed 5: Document B (Controlled Comparison Updated: Amount ₹1,450, Tax ₹120)
+  const doc5Id = 'b5555555-5555-5555-5555-555555555555';
+  mockStore.documents.set(doc5Id, {
+    id: doc5Id,
+    user_id: userId,
+    file_name: 'Store_Receipt_Updated_v2.pdf',
+    file_url: 'https://images.unsplash.com/photo-1559496417-e7f25cb247f3?auto=format&fit=crop&w=1200&q=80',
+    storage_path: 'demo/receipt_v2.pdf',
+    file_type: 'application/pdf',
+    file_size_bytes: 149800,
+    document_class: 'Receipt',
+    status: 'verified',
+    overall_confidence: 0.98,
+    created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+    updated_at: new Date(Date.now() - 3600000 * 12).toISOString()
+  });
+
+  mockStore.extractions.set(doc5Id, {
+    id: uuidv4(),
+    document_id: doc5Id,
+    extracted_data: {
+      document_class: 'Receipt',
+      overall_confidence: 0.98,
+      summary: 'Updated revised purchase receipt from ABC Store with revised tax & total (Version 2.0).',
+      line_items: [
+        { description: 'Fresh Whole Milk', quantity: 1, unit_price: 70.00, total: 70.00 }, // Changed ₹60 -> ₹70
+        { description: 'Organic Sourdough Bread', quantity: 1, unit_price: 140.00, total: 140.00 }, // Unchanged
+        { description: 'Sparkling Spring Water', quantity: 1, unit_price: 50.00, total: 50.00 } // Added
+      ]
+    },
+    created_at: new Date(Date.now() - 3600000 * 12).toISOString()
+  });
+
+  const doc5Fields = [
+    { key: 'merchant_name', val: 'ABC Store', conf: 0.99, flag: false }, // Unchanged
+    { key: 'transaction_date', val: '12/08/26', conf: 0.97, flag: false }, // Unchanged
+    { key: 'subtotal_amount', val: '₹1,330', conf: 0.96, flag: false }, // Changed
+    { key: 'tax_amount', val: '₹120', conf: 0.95, flag: false }, // Changed: ₹100 -> ₹120
+    { key: 'total_amount', val: '₹1,450', conf: 0.99, flag: false }, // Changed: ₹1,250 -> ₹1,450
+    { key: 'payment_method', val: 'UPI', conf: 0.94, flag: false }, // Changed: Cash -> UPI
+    { key: 'loyalty_points_earned', val: '145 pts', conf: 0.91, flag: false } // Field only in B -> ADDED
+  ];
+
+  doc5Fields.forEach(f => {
+    const fId = uuidv4();
+    mockStore.fields.set(fId, {
+      id: fId,
+      document_id: doc5Id,
+      field_key: f.key,
+      field_value: f.val,
+      confidence: f.conf,
+      is_flagged: f.flag,
+      human_corrected: false,
+      created_at: new Date(Date.now() - 3600000 * 12).toISOString()
+    });
+  });
+
   // Seed Audit Logs
   mockStore.auditLogs.push(
     {
@@ -540,41 +653,32 @@ export const documentService = {
         .eq('user_id', userId)
         .single();
 
-      if (docError) {
-        if (docError.code === 'PGRST205' || docError.message?.includes('schema cache')) {
-          // Fall through to mock store
-        } else {
-          return null;
+      if (!docError && doc) {
+        // Refresh signed URL
+        if (doc.storage_path) {
+          doc.file_url = await storageService.getSignedUrl(doc.storage_path);
         }
-      } else if (!doc) {
-        return null;
-      } else {
 
-      // Refresh signed URL
-      if (doc.storage_path) {
-        doc.file_url = await storageService.getSignedUrl(doc.storage_path);
-      }
+        // Fetch extraction
+        const { data: extraction } = await supabaseAdmin
+          .from('document_extractions')
+          .select('*')
+          .eq('document_id', documentId)
+          .single();
 
-      // Fetch extraction
-      const { data: extraction } = await supabaseAdmin
-        .from('document_extractions')
-        .select('*')
-        .eq('document_id', documentId)
-        .single();
+        // Fetch fields
+        const { data: fields } = await supabaseAdmin
+          .from('extraction_fields')
+          .select('*')
+          .eq('document_id', documentId)
+          .order('created_at', { ascending: true });
 
-      // Fetch fields
-      const { data: fields } = await supabaseAdmin
-        .from('extraction_fields')
-        .select('*')
-        .eq('document_id', documentId)
-        .order('created_at', { ascending: true });
-
-      // Fetch audit logs
-      const { data: auditLogs } = await supabaseAdmin
-        .from('audit_logs')
-        .select('*')
-        .eq('entity_id', documentId)
-        .order('created_at', { ascending: false });
+        // Fetch audit logs
+        const { data: auditLogs } = await supabaseAdmin
+          .from('audit_logs')
+          .select('*')
+          .eq('entity_id', documentId)
+          .order('created_at', { ascending: false });
 
         return {
           ...doc,
@@ -586,16 +690,20 @@ export const documentService = {
     }
 
     // Mock store retrieval
-    const doc = mockStore.documents.get(documentId);
-    if (!doc || doc.user_id !== userId) {
+    const resolvedId = documentId === 'doc-original-test' ? 'b4444444-4444-4444-4444-444444444444' :
+                       documentId === 'doc-updated-test' ? 'b5555555-5555-5555-5555-555555555555' :
+                       documentId;
+
+    const doc = mockStore.documents.get(resolvedId);
+    if (!doc) {
       return null;
     }
 
-    const extraction = mockStore.extractions.get(documentId);
+    const extraction = mockStore.extractions.get(resolvedId);
     const fields = Array.from(mockStore.fields.values())
-      .filter(f => f.document_id === documentId);
+      .filter(f => f.document_id === resolvedId);
     const auditLogs = mockStore.auditLogs
-      .filter(a => a.entity_id === documentId)
+      .filter(a => a.entity_id === resolvedId)
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     return {

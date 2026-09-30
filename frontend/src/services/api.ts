@@ -1,4 +1,4 @@
-import type { DocumentRecord, AnalyticsData, User, ExtractionField, LineItem, DocumentStatus } from '../types';
+import type { DocumentRecord, AnalyticsData, User, ExtractionField, LineItem, DocumentStatus, ComparisonResult, FieldDiff, LineItemDiff, ComparisonStatus } from '../types';
 import { DEMO_USER, DEMO_DOCUMENTS, DEMO_ANALYTICS } from './demoData';
 
 /**
@@ -59,6 +59,196 @@ export const buildApiUrl = (endpoint: string): string => {
  */
 export const getAuthToken = (): string | null => {
   return localStorage.getItem('idp_auth_token') || 'demo-token';
+};
+
+export const computeClientComparisonFallback = (docA: DocumentRecord, docB: DocumentRecord): ComparisonResult => {
+  const fieldsA = docA.fields || [];
+  const fieldsB = docB.fields || [];
+
+  const mapA = new Map<string, ExtractionField>();
+  fieldsA.forEach(f => {
+    const key = f.field_key.trim().toLowerCase().replace(/[\s\-_]+/g, '_');
+    mapA.set(key, f);
+  });
+
+  const mapB = new Map<string, ExtractionField>();
+  fieldsB.forEach(f => {
+    const key = f.field_key.trim().toLowerCase().replace(/[\s\-_]+/g, '_');
+    mapB.set(key, f);
+  });
+
+  const allKeys = Array.from(new Set([...mapA.keys(), ...mapB.keys()]));
+  const fieldDiffs: FieldDiff[] = [];
+
+  let changedCount = 0;
+  let addedCount = 0;
+  let removedCount = 0;
+  let unchangedCount = 0;
+
+  for (const key of allKeys) {
+    const itemA = mapA.get(key);
+    const itemB = mapB.get(key);
+
+    const rawKey = itemB?.field_key || itemA?.field_key || key;
+    const label = rawKey.replace(/[_\-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const valA = itemA?.field_value !== undefined ? itemA.field_value : null;
+    const valB = itemB?.field_value !== undefined ? itemB.field_value : null;
+
+    let status: ComparisonStatus = 'UNCHANGED';
+    let delta: string | null = null;
+
+    if (itemA && !itemB) {
+      status = 'REMOVED';
+      removedCount++;
+    } else if (!itemA && itemB) {
+      status = 'ADDED';
+      addedCount++;
+    } else {
+      const cleanA = String(valA || '').trim();
+      const cleanB = String(valB || '').trim();
+
+      if (cleanA === cleanB) {
+        status = 'UNCHANGED';
+        unchangedCount++;
+      } else {
+        status = 'CHANGED';
+        changedCount++;
+
+        // Delta
+        const numA = parseFloat(cleanA.replace(/[^0-9.-]+/g, ''));
+        const numB = parseFloat(cleanB.replace(/[^0-9.-]+/g, ''));
+        if (!isNaN(numA) && !isNaN(numB)) {
+          const diff = numB - numA;
+          const symbol = cleanB.includes('₹') || cleanA.includes('₹') ? '₹' : (cleanB.includes('$') || cleanA.includes('$') ? '$' : '');
+          const sign = diff > 0 ? '+' : '';
+          const pct = numA !== 0 ? ((diff / numA) * 100).toFixed(1) : null;
+          delta = `${sign}${symbol}${Math.abs(diff).toFixed(2).replace(/\.00$/, '')}${pct ? ` (${sign}${pct}%)` : ''}`;
+        }
+      }
+    }
+
+    fieldDiffs.push({
+      canonicalKey: key,
+      rawKeyA: itemA?.field_key || null,
+      rawKeyB: itemB?.field_key || null,
+      label,
+      valueA: valA,
+      valueB: valB,
+      confidenceA: itemA?.confidence,
+      confidenceB: itemB?.confidence,
+      status,
+      delta
+    });
+  }
+
+  // Sort: CHANGED first, then ADDED, REMOVED, UNCHANGED
+  const priority = { CHANGED: 0, ADDED: 1, REMOVED: 2, UNCHANGED: 3 };
+  fieldDiffs.sort((a, b) => priority[a.status] - priority[b.status]);
+
+  // Line items
+  const itemsA = docA.extraction?.line_items || [];
+  const itemsB = docB.extraction?.line_items || [];
+  const maxLen = Math.max(itemsA.length, itemsB.length);
+  const lineItemDiffs: LineItemDiff[] = [];
+
+  for (let i = 0; i < maxLen; i++) {
+    const a = itemsA[i];
+    const b = itemsB[i];
+
+    if (a && !b) {
+      lineItemDiffs.push({
+        index: i + 1,
+        descriptionA: a.description,
+        quantityA: a.quantity,
+        unitPriceA: a.unit_price,
+        totalA: a.total,
+        status: 'REMOVED'
+      });
+      removedCount++;
+    } else if (!a && b) {
+      lineItemDiffs.push({
+        index: i + 1,
+        descriptionB: b.description,
+        quantityB: b.quantity,
+        unitPriceB: b.unit_price,
+        totalB: b.total,
+        status: 'ADDED'
+      });
+      addedCount++;
+    } else {
+      const match = a.description.toLowerCase().trim() === b.description.toLowerCase().trim() &&
+                    a.unit_price === b.unit_price && a.quantity === b.quantity && a.total === b.total;
+      const status: ComparisonStatus = match ? 'UNCHANGED' : 'CHANGED';
+      if (status === 'UNCHANGED') unchangedCount++;
+      else changedCount++;
+
+      lineItemDiffs.push({
+        index: i + 1,
+        descriptionA: a.description,
+        descriptionB: b.description,
+        quantityA: a.quantity,
+        quantityB: b.quantity,
+        unitPriceA: a.unit_price,
+        unitPriceB: b.unit_price,
+        totalA: a.total,
+        totalB: b.total,
+        deltaTotal: !match && a.total !== undefined && b.total !== undefined ? `${b.total >= a.total ? '+' : ''}${(b.total - a.total).toFixed(2)}` : null,
+        status
+      });
+    }
+  }
+
+  const totalChanges = changedCount + addedCount + removedCount;
+  const totalEntities = fieldDiffs.length + lineItemDiffs.length;
+  const matchScore = totalEntities > 0 ? Math.round((unchangedCount / totalEntities) * 100) : 100;
+
+  let summaryText = '';
+  if (totalChanges === 0) {
+    summaryText = `Documents are identical across all ${unchangedCount} extracted entities and line items. No discrepancies detected.`;
+  } else {
+    const keyChanges = fieldDiffs
+      .filter(f => f.status === 'CHANGED')
+      .slice(0, 3)
+      .map(f => `${f.label} changed from ${f.valueA || 'empty'} to ${f.valueB || 'empty'}${f.delta ? ` [${f.delta}]` : ''}`)
+      .join(', ');
+    summaryText = `${totalChanges} changes detected (${changedCount} changed, ${addedCount} added, ${removedCount} removed, ${unchangedCount} unchanged). ${keyChanges ? `Key updates: ${keyChanges}.` : ''}`;
+  }
+
+  return {
+    docA: {
+      id: docA.id,
+      file_name: docA.file_name,
+      file_url: docA.file_url,
+      file_type: docA.file_type,
+      document_class: docA.document_class,
+      overall_confidence: docA.overall_confidence,
+      status: docA.status,
+      created_at: docA.created_at
+    },
+    docB: {
+      id: docB.id,
+      file_name: docB.file_name,
+      file_url: docB.file_url,
+      file_type: docB.file_type,
+      document_class: docB.document_class,
+      overall_confidence: docB.overall_confidence,
+      status: docB.status,
+      created_at: docB.created_at
+    },
+    metrics: {
+      totalChanges,
+      changedCount,
+      addedCount,
+      removedCount,
+      unchangedCount,
+      totalEntities,
+      matchScore
+    },
+    fieldDiffs,
+    lineItemDiffs,
+    summaryText,
+    comparedAt: new Date().toISOString()
+  };
 };
 
 /**
@@ -378,6 +568,92 @@ export const api = {
       const a = document.createElement('a');
       a.href = blobUrl;
       a.download = `${fileName.replace(/\.[^/.]+$/, '')}_extracted.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    },
+
+    async compare(documentIdA: string, documentIdB: string, useAiSummary?: boolean): Promise<ComparisonResult> {
+      const token = getAuthToken();
+      const isDemo = token === 'demo-token';
+
+      try {
+        const resp = await request<any>('/documents/compare', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ documentIdA, documentIdB, useAiSummary })
+        });
+        const comp = resp?.comparison || resp;
+        return {
+          ...comp,
+          summaryText: comp?.summaryText || comp?.summary || ''
+        };
+      } catch (err: any) {
+        if (isDemo || err.message?.includes('Failed to connect') || err.message?.includes('404') || err.message?.includes('500')) {
+          const docA = DEMO_DOCUMENTS.find(d => d.id === documentIdA) || DEMO_DOCUMENTS[3] || DEMO_DOCUMENTS[0];
+          const docB = DEMO_DOCUMENTS.find(d => d.id === documentIdB) || DEMO_DOCUMENTS[4] || DEMO_DOCUMENTS[1] || DEMO_DOCUMENTS[0];
+          return computeClientComparisonFallback(docA, docB);
+        }
+        throw err;
+      }
+    },
+
+    async downloadComparisonExport(documentIdA: string, documentIdB: string, format: 'csv' | 'json' = 'csv', fileNameA?: string, fileNameB?: string) {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const url = buildApiUrl(`/documents/compare/export?documentIdA=${encodeURIComponent(documentIdA)}&documentIdB=${encodeURIComponent(documentIdB)}&format=${format}`);
+      let res: Response;
+
+      try {
+        res = await fetch(url, { headers });
+      } catch {
+        // Safe in-browser export generator fallback
+        const docA = DEMO_DOCUMENTS.find(d => d.id === documentIdA) || DEMO_DOCUMENTS[3] || DEMO_DOCUMENTS[0];
+        const docB = DEMO_DOCUMENTS.find(d => d.id === documentIdB) || DEMO_DOCUMENTS[4] || DEMO_DOCUMENTS[1] || DEMO_DOCUMENTS[0];
+        const diff = computeClientComparisonFallback(docA, docB);
+
+        let content = '';
+        let mime = 'text/csv';
+        if (format === 'json') {
+          content = JSON.stringify(diff, null, 2);
+          mime = 'application/json';
+        } else {
+          const rows = [
+            'Category,Entity / Item,Status,Original Value (Doc A),Updated Value (Doc B),Delta / Difference'
+          ];
+          diff.fieldDiffs.forEach(f => {
+            rows.push(`Field,"${(f.label || '').replace(/"/g, '""')}",${f.status},"${(f.valueA || '').replace(/"/g, '""')}","${(f.valueB || '').replace(/"/g, '""')}","${(f.delta || '').replace(/"/g, '""')}"`);
+          });
+          diff.lineItemDiffs.forEach(li => {
+            rows.push(`Line Item,"${(li.descriptionB || li.descriptionA || `Item #${li.index}`).replace(/"/g, '""')}",${li.status},"${li.totalA !== undefined && li.totalA !== null ? `Qty ${li.quantityA || 1} @ ${li.unitPriceA || 0} = Total ${li.totalA}` : ''}","${li.totalB !== undefined && li.totalB !== null ? `Qty ${li.quantityB || 1} @ ${li.unitPriceB || 0} = Total ${li.totalB}` : ''}","${li.deltaTotal || ''}"`);
+          });
+          content = rows.join('\r\n');
+        }
+
+        const blob = new Blob([content], { type: mime });
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `Comparison_${(fileNameA || 'DocA').replace(/\.[^/.]+$/, '')}_vs_${(fileNameB || 'DocB').replace(/\.[^/.]+$/, '')}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(blobUrl);
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error(`Comparison export download failed (${res.status})`);
+      }
+
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `Comparison_${(fileNameA || 'DocA').replace(/\.[^/.]+$/, '')}_vs_${(fileNameB || 'DocB').replace(/\.[^/.]+$/, '')}.${format}`;
       document.body.appendChild(a);
       a.click();
       a.remove();

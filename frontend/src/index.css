@@ -10,11 +10,19 @@
   --glass-bg-hover: rgba(18, 28, 52, 0.85);
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-border-hover: rgba(99, 102, 241, 0.35);
-  --glass-specular: radial-gradient(circle 180px at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255, 255, 255, 0.08), transparent 80%);
-  --water-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 40%, rgba(99, 102, 241, 0.04) 100%);
+  --glass-specular: radial-gradient(circle 200px at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255, 255, 255, 0.09), transparent 75%);
+  --water-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.01) 40%, rgba(99, 102, 241, 0.05) 100%);
+  
+  /* Motion System Durations (Phase 1) */
   --motion-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
   --motion-medium: 250ms cubic-bezier(0.16, 1, 0.3, 1);
-  --motion-smooth: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  
+  /* Reusable Easing Curves */
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 /* Light Theme Overrides */
@@ -255,6 +263,262 @@
 
 .animate-water-pulse {
   animation: waterPulse 2s infinite;
+}
+
+/* ========================================================================= */
+/* Phase 2: Symmetrical Open / Close Keyframes & Motion Classes             */
+/* ========================================================================= */
+
+@keyframes modalBackdropOpen {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to { opacity: 1; backdrop-filter: blur(16px); }
+}
+
+@keyframes modalBackdropClose {
+  from { opacity: 1; backdrop-filter: blur(16px); }
+  to { opacity: 0; backdrop-filter: blur(0px); }
+}
+
+@keyframes modalContentOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes modalContentClose {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0px);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
+    filter: blur(6px);
+  }
+}
+
+@keyframes drawerRightOpen {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes drawerRightClose {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0px);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+    filter: blur(4px);
+  }
+}
+
+@keyframes dropdownOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-8px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes dropdownClose {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0px);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(-8px);
+    filter: blur(4px);
+  }
+}
+
+@keyframes tooltipOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes tooltipClose {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.94) translateY(4px);
+  }
+}
+
+/* Document Comparison Entrance Animations (Phase 29) */
+@keyframes slideInLeftDoc {
+  from {
+    opacity: 0;
+    transform: translateX(-35px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes slideInRightDoc {
+  from {
+    opacity: 0;
+    transform: translateX(35px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes comparisonDivider {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+/* Ambient Background Blobs (Phase 8) */
+@keyframes ambientBlobA {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(45px, -35px) scale(1.1);
+  }
+  66% {
+    transform: translate(-30px, 25px) scale(0.95);
+  }
+}
+
+@keyframes ambientBlobB {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(-50px, 40px) scale(1.15);
+  }
+  66% {
+    transform: translate(35px, -30px) scale(0.92);
+  }
+}
+
+.ambient-blob-1 {
+  animation: ambientBlobA 22s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.ambient-blob-2 {
+  animation: ambientBlobB 26s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Open / Close Utility Classes */
+.motion-backdrop-enter {
+  animation: modalBackdropOpen 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-backdrop-exit {
+  animation: modalBackdropClose 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-modal-enter {
+  animation: modalContentOpen 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-modal-exit {
+  animation: modalContentClose 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-drawer-enter {
+  animation: drawerRightOpen 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-drawer-exit {
+  animation: drawerRightClose 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-dropdown-enter {
+  animation: dropdownOpen 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-dropdown-exit {
+  animation: dropdownClose 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-tooltip-enter {
+  animation: tooltipOpen 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-tooltip-exit {
+  animation: tooltipClose 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-doc-left {
+  animation: slideInLeftDoc 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-doc-right {
+  animation: slideInRightDoc 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.motion-divider {
+  animation: comparisonDivider 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: center;
+}
+
+/* Staggered Reveals (Phase 1) */
+.stagger-1 { animation-delay: 40ms; }
+.stagger-2 { animation-delay: 80ms; }
+.stagger-3 { animation-delay: 120ms; }
+.stagger-4 { animation-delay: 160ms; }
+.stagger-5 { animation-delay: 200ms; }
+.stagger-6 { animation-delay: 240ms; }
+
+/* Text Scaling Accessibility (Phase 10) */
+[data-text-scale="large"] {
+  font-size: 110%;
+}
+
+[data-text-scale="xlarge"] {
+  font-size: 122%;
 }
 
 /* Animation Overrides from Settings */

@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type AnimationLevel = 'full' | 'reduced' | 'off';
 export type GlassLevel = 'on' | 'reduced' | 'off';
+export type TextScale = 'normal' | 'large' | 'xlarge';
 
 export interface NotificationSettings {
   uploadCompleted: boolean;
@@ -17,6 +18,7 @@ export interface UserSettings {
   glassEffects: GlassLevel;
   cursorEffects: boolean;
   highContrast: boolean;
+  textScale: TextScale;
   notifications: NotificationSettings;
   tourCompleted: boolean;
 }
@@ -28,6 +30,7 @@ interface SettingsContextValue {
   setGlassEffects: (level: GlassLevel) => void;
   setCursorEffects: (enabled: boolean) => void;
   setHighContrast: (enabled: boolean) => void;
+  setTextScale: (scale: TextScale) => void;
   setNotificationSetting: (key: keyof NotificationSettings, value: boolean) => void;
   setTourCompleted: (completed: boolean) => void;
   resetDefaults: () => void;
@@ -39,6 +42,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   glassEffects: 'on',
   cursorEffects: true,
   highContrast: false,
+  textScale: 'normal',
   notifications: {
     uploadCompleted: true,
     processingCompleted: true,
@@ -96,6 +100,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } else {
       root.removeAttribute('data-contrast');
     }
+
+    // 6. Text Scaling (Phase 10 & 43)
+    root.setAttribute('data-text-scale', settings.textScale || 'normal');
   }, [settings]);
 
   const setTheme = (theme: ThemeMode) => setSettings(s => ({ ...s, theme }));
@@ -103,6 +110,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const setGlassEffects = (glassEffects: GlassLevel) => setSettings(s => ({ ...s, glassEffects }));
   const setCursorEffects = (cursorEffects: boolean) => setSettings(s => ({ ...s, cursorEffects }));
   const setHighContrast = (highContrast: boolean) => setSettings(s => ({ ...s, highContrast }));
+  const setTextScale = (textScale: TextScale) => setSettings(s => ({ ...s, textScale }));
   const setTourCompleted = (tourCompleted: boolean) => setSettings(s => ({ ...s, tourCompleted }));
 
   const setNotificationSetting = (key: keyof NotificationSettings, value: boolean) => {
@@ -126,6 +134,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setGlassEffects,
         setCursorEffects,
         setHighContrast,
+        setTextScale,
         setNotificationSetting,
         setTourCompleted,
         resetDefaults

@@ -107,6 +107,76 @@ export const DEMO_DOCUMENTS: DocumentRecord[] = [
       { id: 'a5', action: 'document_uploaded', created_at: new Date(Date.now() - 3600000 * 24).toISOString() },
       { id: 'a6', action: 'verified_automated', created_at: new Date(Date.now() - 3600000 * 23).toISOString() }
     ]
+  },
+  {
+    id: 'b4444444-4444-4444-4444-444444444444',
+    user_id: DEMO_USER.id,
+    file_name: 'Store_Receipt_Original_v1.pdf',
+    file_url: 'https://images.unsplash.com/photo-1559496417-e7f25cb247f3?auto=format&fit=crop&w=1200&q=80',
+    file_type: 'application/pdf',
+    file_size_bytes: 145200,
+    document_class: 'Receipt',
+    status: 'verified',
+    overall_confidence: 0.96,
+    created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
+    updated_at: new Date(Date.now() - 3600000 * 48).toISOString(),
+    extraction: {
+      document_class: 'Receipt',
+      overall_confidence: 0.96,
+      summary: 'Original purchase receipt from ABC Store (Version 1.0).',
+      line_items: [
+        { description: 'Fresh Whole Milk', quantity: 1, unit_price: 60.00, total: 60.00 },
+        { description: 'Organic Sourdough Bread', quantity: 1, unit_price: 140.00, total: 140.00 }
+      ]
+    },
+    fields: [
+      { id: 'sc1', document_id: 'b4444444-4444-4444-4444-444444444444', field_key: 'merchant_name', field_value: 'ABC Store', confidence: 0.99, is_flagged: false, human_corrected: false },
+      { id: 'sc2', document_id: 'b4444444-4444-4444-4444-444444444444', field_key: 'transaction_date', field_value: '12/08/26', confidence: 0.97, is_flagged: false, human_corrected: false },
+      { id: 'sc3', document_id: 'b4444444-4444-4444-4444-444444444444', field_key: 'subtotal_amount', field_value: '₹1,150', confidence: 0.95, is_flagged: false, human_corrected: false },
+      { id: 'sc4', document_id: 'b4444444-4444-4444-4444-444444444444', field_key: 'tax_amount', field_value: '₹100', confidence: 0.94, is_flagged: false, human_corrected: false },
+      { id: 'sc5', document_id: 'b4444444-4444-4444-4444-444444444444', field_key: 'total_amount', field_value: '₹1,250', confidence: 0.98, is_flagged: false, human_corrected: false },
+      { id: 'sc6', document_id: 'b4444444-4444-4444-4444-444444444444', field_key: 'payment_method', field_value: 'Cash', confidence: 0.92, is_flagged: false, human_corrected: false },
+      { id: 'sc7', document_id: 'b4444444-4444-4444-4444-444444444444', field_key: 'discount_code', field_value: 'SUMMER10', confidence: 0.88, is_flagged: false, human_corrected: false }
+    ],
+    audit_logs: [
+      { id: 'a7', action: 'document_uploaded', created_at: new Date(Date.now() - 3600000 * 48).toISOString() }
+    ]
+  },
+  {
+    id: 'b5555555-5555-5555-5555-555555555555',
+    user_id: DEMO_USER.id,
+    file_name: 'Store_Receipt_Updated_v2.pdf',
+    file_url: 'https://images.unsplash.com/photo-1559496417-e7f25cb247f3?auto=format&fit=crop&w=1200&q=80',
+    file_type: 'application/pdf',
+    file_size_bytes: 149800,
+    document_class: 'Receipt',
+    status: 'verified',
+    overall_confidence: 0.98,
+    created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+    updated_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+    extraction: {
+      document_class: 'Receipt',
+      overall_confidence: 0.98,
+      summary: 'Updated revised purchase receipt from ABC Store with revised tax & total (Version 2.0).',
+      line_items: [
+        { description: 'Fresh Whole Milk', quantity: 1, unit_price: 70.00, total: 70.00 },
+        { description: 'Organic Sourdough Bread', quantity: 1, unit_price: 140.00, total: 140.00 },
+        { description: 'Sparkling Spring Water', quantity: 1, unit_price: 50.00, total: 50.00 }
+      ]
+    },
+    fields: [
+      { id: 'sc8', document_id: 'b5555555-5555-5555-5555-555555555555', field_key: 'merchant_name', field_value: 'ABC Store', confidence: 0.99, is_flagged: false, human_corrected: false },
+      { id: 'sc9', document_id: 'b5555555-5555-5555-5555-555555555555', field_key: 'transaction_date', field_value: '12/08/26', confidence: 0.97, is_flagged: false, human_corrected: false },
+      { id: 'sc10', document_id: 'b5555555-5555-5555-5555-555555555555', field_key: 'subtotal_amount', field_value: '₹1,330', confidence: 0.96, is_flagged: false, human_corrected: false },
+      { id: 'sc11', document_id: 'b5555555-5555-5555-5555-555555555555', field_key: 'tax_amount', field_value: '₹120', confidence: 0.95, is_flagged: false, human_corrected: false },
+      { id: 'sc12', document_id: 'b5555555-5555-5555-5555-555555555555', field_key: 'total_amount', field_value: '₹1,450', confidence: 0.99, is_flagged: false, human_corrected: false },
+      { id: 'sc13', document_id: 'b5555555-5555-5555-5555-555555555555', field_key: 'payment_method', field_value: 'UPI', confidence: 0.94, is_flagged: false, human_corrected: false },
+      { id: 'sc14', document_id: 'b5555555-5555-5555-5555-555555555555', field_key: 'loyalty_points_earned', field_value: '145 pts', confidence: 0.91, is_flagged: false, human_corrected: false }
+    ],
+    audit_logs: [
+      { id: 'a8', action: 'document_uploaded', created_at: new Date(Date.now() - 3600000 * 12).toISOString() },
+      { id: 'a9', action: 'human_verified', created_at: new Date(Date.now() - 3600000 * 11).toISOString() }
+    ]
   }
 ];
 

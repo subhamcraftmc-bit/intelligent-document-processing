@@ -1,30 +1,27 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   FileText, 
   Upload, 
   CheckCircle2, 
   AlertTriangle, 
-  Clock, 
   TrendingUp, 
   Search, 
-  Filter, 
   Trash2, 
   ArrowUpRight, 
-  FileSpreadsheet, 
   ShieldCheck,
   RefreshCw,
   FolderOpen,
   ArrowUpDown,
   ShieldAlert,
   X,
-  Sparkles
+  Sparkles,
+  GitCompare
 } from 'lucide-react';
 import { api } from '../services/api';
 import type { DocumentRecord, AnalyticsOverview } from '../types';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { ExportButton } from '../components/ExportButton';
-import { ErrorBoundary } from '../components/ErrorBoundary';
 import { LiquidGlassCard } from '../components/LiquidGlassCard';
 import { ContextHelp } from '../components/ContextHelp';
 
@@ -71,7 +68,7 @@ export const Dashboard: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -115,11 +112,11 @@ export const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, statusFilter, classFilter, sortOption, search]);
 
   useEffect(() => {
     loadData();
-  }, [page, statusFilter, classFilter, sortOption]);
+  }, [loadData]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,7 +167,14 @@ export const Dashboard: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Link
+            to="/compare"
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/80 shadow-md transition-all shrink-0 hover:border-brand-500/50"
+          >
+            <GitCompare className="w-4 h-4 text-brand-400" />
+            <span>Compare Documents</span>
+          </Link>
           <Link
             to="/upload"
             className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-500 text-white shadow-glow-brand transition-all shrink-0"
@@ -706,6 +710,15 @@ export const Dashboard: React.FC = () => {
                     {/* Actions */}
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-2">
+                        <Link
+                          to={`/compare?docA=${doc.id}`}
+                          title="Compare with another document"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-300 hover:text-brand-300 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors btn-interactive"
+                        >
+                          <GitCompare className="w-3.5 h-3.5 text-brand-400" />
+                          <span>Compare</span>
+                        </Link>
+
                         <Link
                           to={`/documents/${doc.id}`}
                           className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors btn-interactive"

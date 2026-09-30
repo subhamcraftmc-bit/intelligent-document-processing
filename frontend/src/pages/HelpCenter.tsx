@@ -15,7 +15,9 @@ import {
   FileText,
   RefreshCw,
   ExternalLink,
-  BookOpen
+  BookOpen,
+  GitCompare,
+  HelpCircle as QuestionIcon
 } from 'lucide-react';
 import { LiquidGlassCard } from '../components/LiquidGlassCard';
 
@@ -36,76 +38,95 @@ interface HelpArticle {
 const HELP_ARTICLES: HelpArticle[] = [
   {
     id: 'getting-started',
-    category: 'Guides',
-    title: 'Getting Started with CineForge IDP',
-    summary: 'A 60-second operational overview for first-time analysts.',
-    content: 'CineForge IDP is an enterprise document understanding system powered by Google Gemini 2.0 Flash. It accepts unstructured files (PDFs, scans, receipts, invoices, contracts) and extracts key-value entities and tabular line items with confidence scoring and human verification.',
+    category: '1. Overview',
+    title: 'GETTING STARTED',
+    summary: 'A fast operational overview of CineForge Intelligent Document Processing.',
+    content: 'CineForge IDP is an enterprise document understanding and intelligence platform powered by Google Gemini 2.0 Multimodal Vision and PostgreSQL. It ingests unstructured documents (invoices, receipts, agreements, resumes, ID cards), extracts structured key-value entities and tabular line items with confidence scoring, and coordinates human verification.',
     steps: [
-      'Upload a document via Drag & Drop or paste a screenshot with Ctrl+V',
-      'Gemini multimodal vision inspects the visual spatial structure',
-      'Entities are classified and confidence scores are calculated',
-      'Flagged fields (< 85% confidence) are routed to Review Center for human sign-off',
-      'Export verified data directly to CSV or JSON API'
+      'Upload a document via drag & drop or paste with Ctrl+V',
+      'Gemini multimodal vision inspects visual layout and extract entities',
+      'Confidence scoring flags ambiguous entities (<85%)',
+      'Human-in-the-Loop review allows instant side-by-side editing',
+      'Compare versions with the AI Document Comparison Engine',
+      'Export verified data to CSV or JSON for ERP/CRM integration'
     ]
   },
   {
-    id: 'how-upload-works',
-    category: 'Guides',
-    title: 'How Multi-Format Ingestion Works',
-    summary: 'Supported formats, size boundaries, and duplicate protection.',
-    content: 'The upload dropzone accepts PDF, PNG, JPG, JPEG, and DOCX files up to 10MB per document. You can stage single or multiple documents at once. CineForge automatically analyzes binary headers and skips duplicate files.',
-    tips: 'Pro-Tip: You can use Windows Snipping Tool (Win + Shift + S) and immediately press Ctrl+V anywhere on the Upload page to stage screenshots directly!'
+    id: 'how-to-upload',
+    category: '2. Ingestion',
+    title: 'HOW TO UPLOAD',
+    summary: 'Supported document formats, file boundaries, and staging queues.',
+    content: 'CineForge accepts PDF, PNG, JPG, JPEG, and DOCX files up to 10MB per document. You can stage single or multi-file batches. The dropzone automatically detects binary file headers and prevents duplicate submissions.',
+    tips: 'Pro-Tip: Press Win+Shift+S (or Cmd+Shift+4) to capture any receipt on screen, then press Ctrl+V anywhere on the Upload page to stage screenshots instantly!'
   },
   {
-    id: 'gemini-vision',
-    category: 'AI Pipeline',
-    title: 'How Gemini 2.0 Multimodal Vision Extracts Data',
-    summary: 'Why visual OCR outperforms traditional OCR and brittle regex templates.',
-    content: 'Unlike legacy OCR tools that collapse visual layouts into flat text streams, Gemini 2.0 Flash inspects the document visually. It maintains spatial awareness between labels and values, understanding skewed tables, multi-column layouts, and watermarked receipts.'
+    id: 'how-ai-processing-works',
+    category: '3. AI Pipeline',
+    title: 'HOW AI PROCESSING WORKS',
+    summary: 'Why Gemini 2.0 Multimodal Vision outperforms traditional flat OCR.',
+    content: 'Legacy OCR collapses visual documents into flat unstructured text strings, destroying tabular geometry. Gemini 2.0 Flash processes the high-resolution visual pixels directly, maintaining full 2D spatial awareness between headers, labels, skewed columns, and watermarked receipts.'
   },
   {
-    id: 'confidence-scoring',
-    category: 'Confidence Intelligence',
-    title: 'Understanding Statistical Confidence Scores',
-    summary: 'How confidence percentages work and when human review triggers.',
-    content: 'Every extracted key-value entity receives a statistical certainty score from 0% to 100%. Scores are categorized into three distinct operational bands:\n\n• HIGH CONFIDENCE (>= 85%): Entity meets automated ingestion threshold.\n• MEDIUM CONFIDENCE (70% - 84%): Slight OCR layout ambiguity; flagged for human verification.\n• NEEDS REVIEW (< 70%): Text unreadable or schema mismatch; mandatory human correction required.',
-    tips: 'An overall document confidence score is computed as the harmonic mean across all extracted fields.'
+    id: 'understanding-extraction',
+    category: '4. Entities',
+    title: 'UNDERSTANDING EXTRACTION',
+    summary: 'Classification schemas and structured entity extraction.',
+    content: 'CineForge classifies documents into 5 core enterprise schemas: Invoices, Receipts, Contracts, Resumes, and Identity Proofs. For each schema, it parses key-value entities (vendor, date, total, tax, terms) and tabular line item arrays with quantity, unit price, and total calculations.'
   },
   {
-    id: 'human-review-center',
-    category: 'Human-in-the-Loop',
-    title: 'Using the Smart Review Center & Queue',
-    summary: 'Efficiently triaging low-confidence documents side-by-side.',
-    content: 'The Review Center displays all documents awaiting human confirmation. Reviewers inspect the original document preview on the left and the editable extraction data grid on the right. When an analyst corrects an entity value, CineForge marks the field as "Edited" and logs a tamper-resistant audit entry.'
+    id: 'understanding-confidence',
+    category: '5. Confidence',
+    title: 'UNDERSTANDING CONFIDENCE',
+    summary: 'Statistical confidence scoring and operational threshold bands.',
+    content: 'Every extracted key-value entity receives a precision certainty score between 0% and 100%:\n\n• HIGH CONFIDENCE (>= 85%): Meets automated straight-through processing standards.\n• MEDIUM CONFIDENCE (70% - 84%): Slight layout or OCR noise; flagged for review.\n• NEEDS REVIEW (< 70%): Ambiguous or obscured characters; mandatory human verification.',
+    tips: 'The overall document confidence is calculated as the harmonic mean across all extracted entities.'
+  },
+  {
+    id: 'human-in-the-loop',
+    category: '6. HITL',
+    title: 'HUMAN-IN-THE-LOOP (HITL)',
+    summary: 'Reviewing and correcting flagged extractions with audit tracking.',
+    content: 'The Review Center displays all documents with entities requiring human confirmation. Analysts inspect the original document preview on the left and the editable extraction grid on the right. Any corrected field is logged in the PostgreSQL audit log with reviewer attribution.'
+  },
+  {
+    id: 'document-verification',
+    category: '7. Compliance',
+    title: 'DOCUMENT VERIFICATION',
+    summary: 'Approval workflows, status states, and immutable audit logs.',
+    content: 'Once all flagged fields are verified or corrected by an analyst, clicking "Approve Document" marks the record as Verified. An immutable audit trail records the auditor ID, timestamp, original value, and modified value for regulatory compliance.'
+  },
+  {
+    id: 'comparing-documents',
+    category: '8. Comparison',
+    title: 'COMPARING DOCUMENTS',
+    summary: 'Using the AI Diff Engine to compare two versions of a document.',
+    content: 'The Document Comparison Engine (Phase 14) lets you select Document A (Original) and Document B (Updated). It normalizes fields across schemas and computes exact field-by-field differences (UNCHANGED, CHANGED, ADDED, REMOVED) with numeric deltas and line item comparisons.',
+    tips: 'Use Side-by-Side or Overlay mode with the transparency slider to inspect physical layout shifts between document revisions.'
   },
   {
     id: 'exporting-data',
-    category: 'Integration',
-    title: 'Exporting Verified Data to CSV & JSON',
-    summary: 'How to save extracted records for downstream ERP, CRM, or accounting sync.',
-    content: 'Verified documents can be exported at any time. CSV exports provide tabular summaries suitable for Excel or legacy databases. JSON exports provide nested structured schemas with field-level confidence ratings and auditor signatures.'
+    category: '9. Integration',
+    title: 'EXPORTING DATA',
+    summary: 'Exporting verified documents and comparisons to CSV & JSON.',
+    content: 'Verified documents and comparison diffs can be exported anytime. CSV exports provide flat tables ready for Excel, QuickBooks, or SAP. JSON exports provide nested structured schemas suitable for webhooks, REST APIs, or automated ERP ingestion pipelines.'
   },
   {
-    id: 'troubleshoot-gemini',
-    category: 'Troubleshooting',
-    title: 'AI Extraction Service Unavailable or Timeout',
-    summary: 'What to do if Gemini or backend connection slows down.',
-    content: 'If the backend is hosted on a free Render tier, the server instance may enter standby after inactivity. The first request will wake up the container (~30s).',
+    id: 'troubleshooting',
+    category: '10. Diagnostics',
+    title: 'TROUBLESHOOTING',
+    summary: 'Resolving container cold starts, network latency, or upload rejections.',
+    content: 'If running on Render free tier, the backend server may take ~30 seconds to wake up from sleep upon the first API request.',
     troubleshooting: {
-      cause: 'Render backend container cold start or transient Google API rate limit.',
-      fix: 'Wait 15-20 seconds and click the "Retry" button on the document card. Alternatively, use 1-Click Instant Demo mode for immediate testing.'
+      cause: 'Server container cold start or transient Google API rate limit.',
+      fix: 'Wait 15 seconds and retry, or use the 1-Click Instant Demo mode for immediate testing.'
     }
   },
   {
-    id: 'troubleshoot-upload-failed',
-    category: 'Troubleshooting',
-    title: 'File Rejected During Upload',
-    summary: 'Handling unsupported document formats or oversized files.',
-    content: 'Files larger than 10MB or in unapproved formats (.exe, .zip, .html) are rejected at the edge to ensure system security.',
-    troubleshooting: {
-      cause: 'Document exceeds 10MB limit or has an unrecognized file extension.',
-      fix: 'Compress the PDF or image file to under 10MB, or convert scans to PNG/JPG before uploading.'
-    }
+    id: 'faq',
+    category: '11. FAQ',
+    title: 'FREQUENTLY ASKED QUESTIONS (FAQ)',
+    summary: 'Common questions on security, accuracy, and data retention.',
+    content: 'Q: Is my document data sent to third-party models for training?\nA: No. Gemini API enterprise inference does not use customer payloads for model retraining.\n\nQ: Can I compare an invoice against a receipt?\nA: Yes! The Comparison Engine normalizes canonical keys (e.g. total_amount, merchant_name, tax_amount) across disparate document classes.\n\nQ: What happens if an image is blurry?\nA: Gemini 2.0 multimodal vision assigns a lower confidence score (<85%) to ambiguous fields, routing them to the Review Center for human sign-off.'
   }
 ];
 
@@ -127,13 +148,13 @@ export const HelpCenter: React.FC<{ onStartTour?: () => void }> = ({ onStartTour
         <div>
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[11px] font-mono mb-2">
             <BookOpen className="w-3.5 h-3.5" />
-            <span>KNOWLEDGE BASE & GUIDES</span>
+            <span>11 COMPREHENSIVE SECTIONS</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            Help Center & Operational Guides
+            Help Center & Operational Documentation
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Learn how multimodal vision, confidence thresholds, and human-in-the-loop verification work together
+            Complete architectural and user guide for document processing, verification, and AI comparison
           </p>
         </div>
 
@@ -144,7 +165,7 @@ export const HelpCenter: React.FC<{ onStartTour?: () => void }> = ({ onStartTour
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold shadow-glow-brand transition-all shrink-0"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Interactive Product Tour</span>
+            <span>Take Product Tour</span>
           </button>
         )}
       </div>
@@ -156,7 +177,7 @@ export const HelpCenter: React.FC<{ onStartTour?: () => void }> = ({ onStartTour
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search articles, troubleshooting, or FAQ..."
+          placeholder="Search articles: upload, extraction, confidence, compare, faq..."
           className="w-full pl-11 pr-4 py-3 text-xs bg-slate-900/80 border border-slate-800 rounded-2xl text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 backdrop-blur-md shadow-lg"
         />
       </div>
@@ -165,7 +186,7 @@ export const HelpCenter: React.FC<{ onStartTour?: () => void }> = ({ onStartTour
       <div className="space-y-3">
         {filtered.length === 0 ? (
           <div className="text-center py-16 text-slate-500 text-xs">
-            No help articles matching "{search}". Try searching for "confidence", "upload", or "troubleshooting".
+            No help articles matching "{search}". Try searching for "compare", "confidence", or "faq".
           </div>
         ) : (
           filtered.map(article => {

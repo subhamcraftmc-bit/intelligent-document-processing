@@ -6,10 +6,8 @@ import {
   Bell, 
   ShieldCheck, 
   Info, 
-  Save, 
   RotateCcw, 
   CheckCircle2, 
-  Sparkles, 
   Cpu, 
   Database, 
   Lock,
@@ -26,7 +24,7 @@ import { useToast } from '../context/ToastContext';
 import { LiquidGlassCard } from '../components/LiquidGlassCard';
 import { api } from '../services/api';
 
-type TabType = 'profile' | 'appearance' | 'accessibility' | 'notifications' | 'security' | 'about';
+type TabType = 'general' | 'appearance' | 'profile' | 'accessibility' | 'notifications' | 'security' | 'about';
 
 export const Settings: React.FC = () => {
   const { user } = useAuth();
@@ -37,6 +35,7 @@ export const Settings: React.FC = () => {
     setGlassEffects, 
     setCursorEffects, 
     setHighContrast, 
+    setTextScale,
     setNotificationSetting, 
     resetDefaults 
   } = useSettings();
@@ -60,9 +59,10 @@ export const Settings: React.FC = () => {
   };
 
   const navTabs: { id: TabType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: 'general', label: 'General & Workflow', icon: Sliders },
     { id: 'appearance', label: 'Appearance & Glass', icon: Palette },
     { id: 'profile', label: 'User Profile', icon: User },
-    { id: 'accessibility', label: 'Accessibility', icon: Eye },
+    { id: 'accessibility', label: 'Accessibility & Text', icon: Eye },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Security & Connected Services', icon: ShieldCheck },
     { id: 'about', label: 'System Diagnostics', icon: Info },
@@ -126,6 +126,42 @@ export const Settings: React.FC = () => {
         {/* Right Settings Content */}
         <div className="lg:col-span-8">
           <LiquidGlassCard className="p-6 sm:p-8 space-y-6">
+            {/* TAB 0: GENERAL */}
+            {activeTab === 'general' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-base font-bold text-white">General & IDP Workflow</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Global defaults for document processing and comparison workflows</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+                    <label className="text-xs font-semibold text-slate-200">Default Export Format</label>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-slate-400">Preferred format for verified documents and comparisons:</span>
+                      <span className="px-3 py-1 rounded-xl bg-brand-500/20 text-brand-300 font-mono text-xs border border-brand-500/30">
+                        CSV + JSON Supported
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+                    <label className="text-xs font-semibold text-slate-200">Confidence Threshold Strategy</label>
+                    <p className="text-xs text-slate-400">
+                      Automated high confidence threshold is set at <strong className="text-emerald-400">85%</strong>. Entities with confidence below this threshold are routed to the Human-in-the-Loop review queue.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+                    <label className="text-xs font-semibold text-slate-200">AI Comparison Engine</label>
+                    <p className="text-xs text-slate-400">
+                      Normalizes keys (e.g. merchant_name, total_amount, tax_amount) across disparate extraction providers and generates natural language diff summaries.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* TAB 1: APPEARANCE */}
             {activeTab === 'appearance' && (
               <div className="space-y-6">
@@ -280,6 +316,25 @@ export const Settings: React.FC = () => {
                       <option value="full">Full Motion (250ms)</option>
                       <option value="reduced">Reduced Motion (100ms)</option>
                       <option value="off">Animations Disabled (0ms)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4">
+                    <div>
+                      <h4 className="text-xs font-semibold text-slate-200">Text Scaling (Accessibility)</h4>
+                      <p className="text-[11px] text-slate-400">Scale interface typography for enhanced legibility</p>
+                    </div>
+                    <select
+                      value={settings.textScale || 'normal'}
+                      onChange={e => {
+                        setTextScale(e.target.value as any);
+                        toast.info(`Text scale set to ${e.target.value}.`);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200"
+                    >
+                      <option value="normal">Normal (100%)</option>
+                      <option value="large">Large (110%)</option>
+                      <option value="xlarge">Extra Large (122%)</option>
                     </select>
                   </div>
 

@@ -3,7 +3,8 @@ import { HelpCircle, X } from 'lucide-react';
 
 interface ContextHelpProps {
   title: string;
-  content: string;
+  content?: string;
+  description?: string;
   position?: 'top' | 'bottom' | 'left' | 'right';
   className?: string;
 }
@@ -11,16 +12,28 @@ interface ContextHelpProps {
 export const ContextHelp: React.FC<ContextHelpProps> = ({
   title,
   content,
+  description,
   position = 'top',
   className = ''
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+
+  const textToDisplay = description || content || '';
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsOpen(false);
+      setIsClosing(false);
+    }, 150);
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
+        handleClose();
       }
     };
 
@@ -41,7 +54,10 @@ export const ContextHelp: React.FC<ContextHelpProps> = ({
     <div className={`relative inline-flex items-center ${className}`} ref={popoverRef}>
       <button
         type="button"
-        onClick={() => setIsOpen(prev => !prev)}
+        onClick={() => {
+          if (isOpen) handleClose();
+          else setIsOpen(true);
+        }}
         className="p-1 rounded-full text-slate-500 hover:text-brand-400 hover:bg-slate-800/80 transition-colors focus:outline-none"
         title={`Help: ${title}`}
         aria-label={`Help: ${title}`}
@@ -52,7 +68,9 @@ export const ContextHelp: React.FC<ContextHelpProps> = ({
       {isOpen && (
         <div
           role="tooltip"
-          className={`absolute z-50 w-64 p-3 rounded-xl bg-slate-900/95 border border-brand-500/40 shadow-2xl text-left backdrop-blur-xl animate-fade-in ${posClasses}`}
+          className={`absolute z-50 w-64 p-3.5 rounded-2xl bg-slate-900/95 border border-brand-500/40 shadow-2xl text-left backdrop-blur-xl liquid-glass ${posClasses} ${
+            isClosing ? 'motion-dropdown-exit' : 'motion-dropdown-enter'
+          }`}
         >
           <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-1.5">
             <span className="text-[11px] font-bold text-white tracking-tight flex items-center gap-1.5">
@@ -61,14 +79,14 @@ export const ContextHelp: React.FC<ContextHelpProps> = ({
             </span>
             <button
               type="button"
-              onClick={() => setIsOpen(false)}
+              onClick={handleClose}
               className="text-slate-500 hover:text-white"
             >
               <X className="w-3 h-3" />
             </button>
           </div>
           <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
-            {content}
+            {textToDisplay}
           </p>
         </div>
       )}

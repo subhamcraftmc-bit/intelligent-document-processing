@@ -11,7 +11,6 @@ import {
   Sparkles, 
   Check, 
   Layers, 
-  HelpCircle,
   History
 } from 'lucide-react';
 import type { DocumentRecord, ExtractionField, LineItem } from '../types';

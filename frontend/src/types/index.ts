@@ -74,3 +74,71 @@ export interface AnalyticsData {
   distribution_by_class: Record<string, number>;
   recent_activity: AuditLog[];
 }
+
+export type ComparisonStatus = 'UNCHANGED' | 'CHANGED' | 'ADDED' | 'REMOVED';
+
+export interface FieldDiff {
+  canonicalKey: string;
+  rawKeyA: string | null;
+  rawKeyB: string | null;
+  label: string;
+  valueA: string | null;
+  valueB: string | null;
+  confidenceA?: number | null;
+  confidenceB?: number | null;
+  status: ComparisonStatus;
+  delta?: string | null;
+}
+
+export interface LineItemDiff {
+  index: number;
+  descriptionA?: string | null;
+  descriptionB?: string | null;
+  quantityA?: number | null;
+  quantityB?: number | null;
+  unitPriceA?: number | null;
+  unitPriceB?: number | null;
+  totalA?: number | null;
+  totalB?: number | null;
+  deltaTotal?: string | null;
+  status: ComparisonStatus;
+}
+
+export interface ComparisonMetrics {
+  totalChanges: number;
+  changedCount: number;
+  addedCount: number;
+  removedCount: number;
+  unchangedCount: number;
+  totalEntities: number;
+  matchScore: number;
+}
+
+export interface ComparisonResult {
+  docA: {
+    id: string;
+    file_name: string;
+    file_url: string;
+    file_type: string;
+    document_class: DocumentClass | null;
+    overall_confidence: number | null;
+    status: DocumentStatus;
+    created_at: string;
+  };
+  docB: {
+    id: string;
+    file_name: string;
+    file_url: string;
+    file_type: string;
+    document_class: DocumentClass | null;
+    overall_confidence: number | null;
+    status: DocumentStatus;
+    created_at: string;
+  };
+  metrics: ComparisonMetrics;
+  fieldDiffs: FieldDiff[];
+  lineItemDiffs: LineItemDiff[];
+  summaryText: string;
+  comparedAt: string;
+}
+

@@ -230,6 +230,66 @@ async function run() {
     }
   })) passed++;
 
+  // 17. Intelligent Document Comparison (Phase 14-34)
+  total++;
+  let comparisonDocA = null;
+  let comparisonDocB = null;
+  if (await test('POST /api/documents/compare (Structured Document Comparison)', async () => {
+    const listRes = await fetch(`${BASE_URL}/api/documents`, {
+      headers: { Authorization: `Bearer ${authToken}` }
+    });
+    const listData = await listRes.json();
+    const docs = listData.data.documents || [];
+    if (docs.length < 2) throw new Error('At least 2 documents required for comparison');
+
+    comparisonDocA = docs[0].id;
+    comparisonDocB = docs[1].id;
+
+    const res = await fetch(`${BASE_URL}/api/documents/compare`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`
+      },
+      body: JSON.stringify({
+        docA_id: comparisonDocA,
+        docB_id: comparisonDocB,
+        use_ai_summary: false
+      })
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Comparison returned status ${res.status}: ${err}`);
+    }
+    const data = await res.json();
+    if (!data.success || !data.data.comparison) throw new Error('Invalid comparison payload');
+    if (!data.data.comparison.metrics || !data.data.comparison.fieldDiffs) throw new Error('Missing metrics or fieldDiffs in comparison result');
+  })) passed++;
+
+  // 18. Comparison CSV Export
+  total++;
+  if (await test('GET /api/documents/compare/export?format=csv', async () => {
+    if (!comparisonDocA || !comparisonDocB) throw new Error('Missing sample doc IDs');
+    const res = await fetch(`${BASE_URL}/api/documents/compare/export?docA_id=${comparisonDocA}&docB_id=${comparisonDocB}&format=csv`, {
+      headers: { Authorization: `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error(`Export returned status ${res.status}`);
+    const text = await res.text();
+    if (!text.includes('Category,Entity / Item,Status')) throw new Error('Missing CSV headers');
+  })) passed++;
+
+  // 19. Comparison JSON Export
+  total++;
+  if (await test('GET /api/documents/compare/export?format=json', async () => {
+    if (!comparisonDocA || !comparisonDocB) throw new Error('Missing sample doc IDs');
+    const res = await fetch(`${BASE_URL}/api/documents/compare/export?docA_id=${comparisonDocA}&docB_id=${comparisonDocB}&format=json`, {
+      headers: { Authorization: `Bearer ${authToken}` }
+    });
+    if (!res.ok) throw new Error(`Export returned status ${res.status}`);
+    const json = await res.json();
+    if (!json.metrics || !json.fieldDiffs) throw new Error('Invalid JSON export payload');
+  })) passed++;
+
   console.log(`\n=== RESULTS: ${passed}/${total} TESTS PASSED ===`);
   process.exit(passed === total ? 0 : 1);
 }

@@ -14,7 +14,8 @@ import {
   HelpCircle,
   Menu,
   X,
-  Presentation
+  Presentation,
+  GitCompare
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -35,8 +36,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'Upload Documents', path: '/upload', icon: Upload },
+    { label: 'Upload', path: '/upload', icon: Upload },
     { label: 'Review Center', path: '/review', icon: CheckCircle2, badge: 'HITL' },
+    { label: 'Compare', path: '/compare', icon: GitCompare, badge: 'AI Diff' },
     { label: 'Analytics', path: '/analytics', icon: BarChart3 },
     { label: 'Settings', path: '/settings', icon: SettingsIcon },
     { label: 'Help', path: '/help', icon: HelpCircle },
@@ -75,16 +77,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all btn-interactive ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 btn-interactive ${
                       isActive
-                        ? 'bg-brand-500/20 text-brand-300 border border-brand-500/40 shadow-sm'
+                        ? 'bg-brand-500/20 text-brand-300 border border-brand-500/40 shadow-[0_0_16px_rgba(99,102,241,0.25)]'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
                     <span>{item.label}</span>
                     {item.badge && (
-                      <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-mono border ${
+                        item.badge === 'AI Diff' 
+                          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' 
+                          : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                      }`}>
                         {item.badge}
                       </span>
                     )}
@@ -201,7 +207,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Mobile Navigation Dropdown */}
         {mobileMenuOpen && (
-          <div className="lg:hidden py-3 border-t border-slate-800/80 animate-fade-in space-y-1">
+          <div className="lg:hidden py-3 border-t border-slate-800/80 motion-dropdown-enter space-y-1">
             <div className="flex items-center justify-between px-3 py-1.5 mb-2 rounded-lg bg-slate-900/60 text-[11px] font-mono text-slate-300">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />

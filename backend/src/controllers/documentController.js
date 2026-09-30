@@ -5,10 +5,114 @@ import { documentService } from '../services/documentService.js';
 import { storageService } from '../services/storageService.js';
 import { geminiService } from '../services/geminiService.js';
 import { exportService } from '../services/exportService.js';
+import { comparisonService } from '../services/comparisonService.js';
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
 import { logger } from '../utils/logger.js';
 
 export const documentController = {
+  /**
+   * Compare two documents and generate structured diff
+   */
+  async compareDocuments(req, res) {
+    try {
+      const documentIdA = req.body.documentIdA || req.body.docA_id || req.body.docAId;
+      const documentIdB = req.body.documentIdB || req.body.docB_id || req.body.docBId;
+      const useAiSummary = req.body.useAiSummary || req.body.use_ai_summary;
+
+      if (!documentIdA || !documentIdB) {
+        return sendError(res, 'Both documentIdA and documentIdB are required to perform a comparison.', 400);
+      }
+
+      if (documentIdA === documentIdB) {
+        // Handle comparing the exact same document
+        const doc = await documentService.getDocumentById(documentIdA, req.user.id);
+        if (!doc) {
+          return sendError(res, 'Document not found or access denied.', 404);
+        }
+        const result = await comparisonService.compareDocuments(doc, doc, { useAiSummary });
+        return sendSuccess(res, { ...result, comparison: result }, 'Document compared with itself (identical).');
+      }
+
+      const [docA, docB] = await Promise.all([
+        documentService.getDocumentById(documentIdA, req.user.id),
+        documentService.getDocumentById(documentIdB, req.user.id)
+      ]);
+
+      if (!docA) {
+        return sendError(res, `Original document (ID: ${documentIdA}) was not found or access is denied.`, 404);
+      }
+      if (!docB) {
+        return sendError(res, `Updated document (ID: ${documentIdB}) was not found or access is denied.`, 404);
+      }
+
+      const diffResult = await comparisonService.compareDocuments(docA, docB, { useAiSummary });
+
+      // Record audit log for compliance
+      await documentService.logAudit({
+        userId: req.user.id,
+        action: 'DOCUMENTS_COMPARED',
+        entityId: docA.id,
+        details: {
+          documentIdA: docA.id,
+          documentIdB: docB.id,
+          fileNameA: docA.file_name,
+          fileNameB: docB.file_name,
+          totalChanges: diffResult.metrics.totalChanges,
+          changedCount: diffResult.metrics.changedCount
+        }
+      });
+
+      return sendSuccess(res, { ...diffResult, comparison: diffResult }, 'Document comparison generated successfully.', 200);
+    } catch (err) {
+      logger.error('Error comparing documents:', err);
+      return sendError(res, `Comparison failure: ${err.message}`, 500);
+    }
+  },
+
+  /**
+   * Export document comparison as CSV or JSON
+   */
+  async exportComparison(req, res) {
+    try {
+      const documentIdA = req.query.documentIdA || req.query.docA_id || req.query.docAId;
+      const documentIdB = req.query.documentIdB || req.query.docB_id || req.query.docBId;
+      const rawFormat = req.query.format;
+      const format = (rawFormat || 'csv').toLowerCase();
+
+      if (!documentIdA || !documentIdB) {
+        return sendError(res, 'Both documentIdA and documentIdB query parameters are required.', 400);
+      }
+
+      const [docA, docB] = await Promise.all([
+        documentService.getDocumentById(documentIdA, req.user.id),
+        documentService.getDocumentById(documentIdB, req.user.id)
+      ]);
+
+      if (!docA || !docB) {
+        return sendError(res, 'One or both documents could not be found.', 404);
+      }
+
+      const diffResult = await comparisonService.compareDocuments(docA, docB);
+      const cleanA = docA.file_name.replace(/\.[^/.]+$/, '');
+      const cleanB = docB.file_name.replace(/\.[^/.]+$/, '');
+      const baseFilename = `Comparison_${cleanA}_vs_${cleanB}`;
+
+      if (format === 'json') {
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${baseFilename}.json"`);
+        return res.send(JSON.stringify(diffResult, null, 2));
+      }
+
+      // Default CSV
+      const csv = comparisonService.generateComparisonCsv(diffResult);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${baseFilename}.csv"`);
+      return res.send(csv);
+    } catch (err) {
+      logger.error('Error exporting comparison:', err);
+      return sendError(res, `Export comparison failure: ${err.message}`, 500);
+    }
+  },
   /**
    * List documents with filtering, search, and pagination
    */
