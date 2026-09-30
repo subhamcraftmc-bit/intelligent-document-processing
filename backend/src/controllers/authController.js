@@ -27,7 +27,8 @@ export const authController = {
 
         return sendSuccess(res, {
           user: data.user,
-          session: data.session
+          session: data.session,
+          token: data.session?.access_token || null
         }, 'Registration successful. Please verify your email or sign in.', 201);
       }
 
