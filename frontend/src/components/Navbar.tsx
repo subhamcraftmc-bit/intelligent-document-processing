@@ -7,12 +7,20 @@ import {
   LogOut, 
   Sparkles, 
   LayoutDashboard,
+  CheckCircle2,
+  Command,
+  Keyboard,
   Menu,
   X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export const Navbar: React.FC = () => {
+interface NavbarProps {
+  onOpenCommandPalette?: () => void;
+  onOpenShortcuts?: () => void;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ onOpenCommandPalette, onOpenShortcuts }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -20,6 +28,7 @@ export const Navbar: React.FC = () => {
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Upload Documents', path: '/upload', icon: Upload },
+    { label: 'Review Center', path: '/review', icon: CheckCircle2, badge: 'HITL' },
     { label: 'Analytics', path: '/analytics', icon: BarChart3 },
   ];
 
@@ -64,14 +73,48 @@ export const Navbar: React.FC = () => {
                   >
                     <Icon className="w-4 h-4" />
                     <span>{item.label}</span>
+                    {item.badge && (
+                      <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
             </nav>
           </div>
 
-          {/* Right Header: User, Status & Mobile Toggle */}
+          {/* Right Header: Search Palette Trigger, Shortcuts, User & Status */}
           <div className="flex items-center gap-3">
+            {/* Quick Command Palette Button */}
+            {onOpenCommandPalette && (
+              <button
+                type="button"
+                onClick={onOpenCommandPalette}
+                className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 text-xs font-mono transition-colors"
+                title="Open Command Palette (Ctrl+K)"
+              >
+                <Command className="w-3.5 h-3.5 text-brand-400" />
+                <span className="text-slate-300">Quick Actions</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px]">
+                  ⌘K
+                </kbd>
+              </button>
+            )}
+
+            {/* Shortcuts Help Button */}
+            {onOpenShortcuts && (
+              <button
+                type="button"
+                onClick={onOpenShortcuts}
+                className="hidden sm:flex items-center justify-center p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+                title="Keyboard Shortcuts (?)"
+                aria-label="Keyboard Shortcuts"
+              >
+                <Keyboard className="w-4 h-4" />
+              </button>
+            )}
+
             <div className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-900/90 border border-slate-800 text-[11px] font-mono text-slate-300">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>Gemini 2.0 Vision Online</span>
@@ -135,14 +178,21 @@ export const Navbar: React.FC = () => {
                   key={item.path}
                   to={item.path}
                   onClick={handleNavClick}
-                  className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                     isActive
                       ? 'bg-brand-500/20 text-brand-300 border border-brand-500/30'
                       : 'text-slate-300 hover:text-white hover:bg-slate-900/80'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.label}</span>
+                  <div className="flex items-center gap-2.5">
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}

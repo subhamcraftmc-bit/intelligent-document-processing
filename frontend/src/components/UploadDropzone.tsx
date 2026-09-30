@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   UploadCloud, 
   FileText, 
@@ -11,7 +12,9 @@ import {
   ShieldCheck,
   Cpu,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  Copy,
+  FileCheck
 } from 'lucide-react';
 import { api } from '../services/api';
 import type { DocumentRecord } from '../types';
@@ -36,7 +39,7 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'error' | 'success' | 'warning'; text: string } | null>(null);
   const [processedDocs, setProcessedDocs] = useState<DocumentRecord[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -48,7 +51,6 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
       setCurrentStageIndex(0);
       stageInterval = setInterval(() => {
         setCurrentStageIndex(prev => {
-          // Advance through stages 0 -> 1 -> 2 -> 3, leaving stage 4 for response completion
           if (prev < PROCESSING_STAGES.length - 1) {
             return prev + 1;
           }
@@ -63,24 +65,26 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
     };
   }, [uploading]);
 
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
-  };
-
-  const validateAndAddFiles = (files: FileList | null) => {
-    if (!files) return;
+  const validateAndAddFiles = useCallback((files: FileList | File[]) => {
+    if (!files || files.length === 0) return;
     setStatusMessage(null);
 
     const newFiles: File[] = [];
+    let duplicatesSkipped = 0;
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+
+      // Duplicate check against current selection
+      const isDuplicate = selectedFiles.some(
+        f => f.name === file.name && f.size === file.size
+      );
+
+      if (isDuplicate) {
+        duplicatesSkipped++;
+        continue;
+      }
 
       if (!ALLOWED_EXTENSIONS.includes(ext)) {
         setStatusMessage({
@@ -101,7 +105,40 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
       newFiles.push(file);
     }
 
-    setSelectedFiles(prev => [...prev, ...newFiles]);
+    if (duplicatesSkipped > 0) {
+      setStatusMessage({
+        type: 'warning',
+        text: `${duplicatesSkipped} duplicate document(s) were automatically skipped.`
+      });
+    }
+
+    if (newFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...newFiles]);
+    }
+  }, [selectedFiles]);
+
+  // Support clipboard paste (e.g. screenshot or copied file)
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (uploading) return;
+      if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
+        e.preventDefault();
+        validateAndAddFiles(e.clipboardData.files);
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [uploading, validateAndAddFiles]);
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -116,6 +153,10 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       validateAndAddFiles(e.target.files);
+    }
+    // Reset file input so re-selecting same file triggers change
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -152,7 +193,7 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
     } catch (err: any) {
       setStatusMessage({
         type: 'error',
-        text: err.message || 'Upload and extraction failed. Please try again.'
+        text: err.message || 'Upload and extraction failed. If the backend is restarting, please retry in a few moments.'
       });
     } finally {
       setUploading(false);
@@ -203,11 +244,11 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
           <h3 className="text-base sm:text-lg font-semibold text-white mb-1">
             {uploading 
               ? 'Analyzing document layout with Gemini 2.0...'
-              : <>Drop your documents here, or <span className="text-brand-400 underline">browse files</span></>
+              : <>Drop documents here, or <span className="text-brand-400 underline">browse files</span></>
             }
           </h3>
           <p className="text-xs sm:text-sm text-slate-400 mb-4">
-            Supports Invoices, Receipts, Contracts, Resumes, and Identity Proofs
+            Supports Invoices, Receipts, Contracts, Resumes, and Identity Proofs • Paste screenshots with <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] text-slate-300">Ctrl+V</kbd>
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500">
@@ -225,7 +266,7 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
         </div>
       </div>
 
-      {/* Honest AI Pipeline Progress State (Phase 8 & 9) */}
+      {/* Honest AI Pipeline Progress State */}
       {uploading && (
         <div className="p-5 rounded-2xl bg-slate-900/90 border border-brand-500/40 shadow-xl space-y-4 animate-fade-in">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -286,12 +327,16 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
           className={`p-4 rounded-xl text-xs flex items-center justify-between gap-3 border animate-fade-in ${
             statusMessage.type === 'error'
               ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+              : statusMessage.type === 'warning'
+              ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
               : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
           }`}
         >
           <div className="flex items-center gap-2.5">
             {statusMessage.type === 'error' ? (
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+            ) : statusMessage.type === 'warning' ? (
+              <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
             ) : (
               <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
             )}
@@ -312,16 +357,19 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
 
       {/* Selected File Queue */}
       {selectedFiles.length > 0 && (
-        <div className="space-y-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 animate-fade-in">
+        <div className="space-y-3 bg-slate-900/60 p-4 sm:p-5 rounded-2xl border border-slate-800 animate-fade-in">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-            <span>Staged Documents ({selectedFiles.length})</span>
+            <span className="flex items-center gap-2">
+              <FileCheck className="w-4 h-4 text-brand-400" />
+              <span>Staged Documents ({selectedFiles.length})</span>
+            </span>
             <button
               type="button"
               disabled={uploading}
               onClick={() => setSelectedFiles([])}
-              className="text-slate-500 hover:text-slate-300 disabled:opacity-40"
+              className="text-slate-500 hover:text-rose-400 text-xs transition-colors disabled:opacity-40"
             >
-              Clear All
+              Clear Staged
             </button>
           </div>
 
@@ -329,17 +377,23 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
             {selectedFiles.map((file, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-xs"
+                className="flex items-center justify-between p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 text-xs"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {file.name.endsWith('.pdf') ? (
-                    <FileText className="w-4 h-4 text-brand-400 shrink-0" />
+                    <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+                      <FileText className="w-4 h-4" />
+                    </div>
                   ) : (
-                    <ImageIcon className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                      <ImageIcon className="w-4 h-4" />
+                    </div>
                   )}
                   <div className="truncate">
-                    <p className="font-medium text-slate-200 truncate">{file.name}</p>
-                    <p className="text-[11px] text-slate-500">{(file.size / 1024).toFixed(1)} KB</p>
+                    <p className="font-semibold text-slate-200 truncate">{file.name}</p>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      {(file.size / 1024).toFixed(1)} KB • {file.type || 'document'}
+                    </p>
                   </div>
                 </div>
 
@@ -347,7 +401,7 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
                   <button
                     type="button"
                     onClick={() => removeFile(idx)}
-                    className="p-1 text-slate-500 hover:text-rose-400 rounded transition-colors btn-interactive"
+                    className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg hover:bg-slate-900 transition-colors btn-interactive"
                     aria-label={`Remove ${file.name}`}
                   >
                     <X className="w-4 h-4" />
@@ -407,13 +461,13 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
                   </div>
                 </div>
 
-                <a
-                  href={`/documents/${doc.id}`}
+                <Link
+                  to={`/documents/${doc.id}`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors shrink-0 btn-interactive"
                 >
                   <span>Review & Verify</span>
                   <ArrowRight className="w-3.5 h-3.5 text-brand-400" />
-                </a>
+                </Link>
               </div>
             ))}
           </div>
