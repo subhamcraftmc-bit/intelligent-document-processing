@@ -1,0 +1,24 @@
+{
+  "name": "intelligent-document-processing-system",
+  "version": "1.0.0",
+  "description": "Production-Grade Intelligent Document Processing (IDP) System powered by Google Gemini 2.0 Flash & Supabase",
+  "private": true,
+  "scripts": {
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "migrate": "cd backend && npm run migrate"
+  },
+  "keywords": [
+    "idp",
+    "intelligent-document-processing",
+    "gemini-2.0",
+    "multimodal-vision",
+    "ocr",
+    "supabase"
+  ],
+  "author": "Antigravity Architect",
+  "license": "MIT"
+}

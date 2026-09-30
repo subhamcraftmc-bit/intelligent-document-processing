@@ -1,0 +1,14 @@
+COMMERCIAL INVOICE
+Invoice Number: INV-2026-9901
+Vendor: NVIDIA Cloud Compute Solutions LLC
+Date: 2026-09-30
+Due Date: 2026-10-30
+Bill To: CineForge AI Corp
+Subtotal: ,500.00
+Tax (8.5%): .50
+Total Amount Due: ,222.50
+Payment Terms: Net 30 Days (Direct Wire Transfer)
+
+Line Items:
+1. DGX Cloud Compute Cluster - 100 GPU Hours @ .00 = ,500.00
+2. High-Speed InfiniBand Interconnect SLA - 1 Month = ,000.00
