@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { ZoomIn, ZoomOut, RotateCw, Maximize2, ExternalLink, FileText, Image as ImageIcon } from 'lucide-react';
 
 interface DocumentViewerProps {
-  fileUrl: string;
-  fileType: string;
-  fileName: string;
+  fileUrl?: string | null;
+  fileType?: string | null;
+  fileName?: string | null;
 }
 
 export const DocumentViewer: React.FC<DocumentViewerProps> = ({
@@ -16,8 +16,12 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   const [rotation, setRotation] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const isPdf = fileType.includes('pdf') || fileName.toLowerCase().endsWith('.pdf');
-  const isImage = fileType.includes('image') || /\.(png|jpe?g|webp)$/i.test(fileName);
+  const safeFileType = (fileType || '').toLowerCase();
+  const safeFileName = fileName || 'Document';
+  const safeFileUrl = fileUrl || '';
+
+  const isPdf = safeFileType.includes('pdf') || safeFileName.toLowerCase().endsWith('.pdf');
+  const isImage = safeFileType.includes('image') || /\.(png|jpe?g|webp|gif|svg)$/i.test(safeFileName);
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.25, 0.5));
@@ -98,24 +102,34 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             <Maximize2 className="w-4 h-4" />
           </button>
 
-          <a
-            href={fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Open in new tab"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </a>
+          {safeFileUrl && (
+            <a
+              href={safeFileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open in new tab"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
         </div>
       </div>
 
       {/* Document View Canvas */}
       <div className="flex-1 overflow-auto bg-[#05070a] p-4 flex items-center justify-center relative min-h-[480px]">
-        {isPdf ? (
+        {!safeFileUrl ? (
+          <div className="flex flex-col items-center justify-center p-8 text-center max-w-sm">
+            <FileText className="w-12 h-12 text-slate-600 mb-3" />
+            <p className="text-sm font-semibold text-slate-300 mb-1">Document Link Pending</p>
+            <p className="text-xs text-slate-500">
+              The storage signature or preview URL for this file is currently being generated.
+            </p>
+          </div>
+        ) : isPdf ? (
           <div className="w-full h-full min-h-[550px] flex items-center justify-center">
             <object
-              data={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+              data={`${safeFileUrl}#toolbar=0&navpanes=0&scrollbar=1`}
               type="application/pdf"
               className="w-full h-full min-h-[550px] rounded-lg border border-slate-800/80 shadow-2xl bg-white"
             >
@@ -127,7 +141,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   Native PDF embedding is disabled or loading. Click below to view the original PDF document.
                 </p>
                 <a
-                  href={fileUrl}
+                  href={safeFileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white shadow-glow-brand transition-all"
@@ -146,11 +160,10 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             }}
           >
             <img
-              src={fileUrl}
-              alt={fileName}
+              src={safeFileUrl}
+              alt={safeFileName}
               className="max-h-[700px] max-w-full rounded-lg shadow-2xl object-contain border border-slate-800"
               onError={(e) => {
-                // Image fallback
                 (e.target as HTMLElement).style.display = 'none';
               }}
             />

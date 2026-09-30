@@ -9,6 +9,7 @@ import { UploadPage } from './pages/UploadPage';
 import { DocumentDetail } from './pages/DocumentDetail';
 import { Analytics } from './pages/Analytics';
 import { Loader2 } from 'lucide-react';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -29,7 +30,9 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   return (
     <div className="min-h-screen flex flex-col bg-[#07090e]">
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </main>
       <footer className="border-t border-slate-900 py-4 text-center text-xs text-slate-500 font-mono">
         CineForge Intelligent Document Processing System • Powered by Google Gemini 2.0 Flash Multimodal Vision
       </footer>
@@ -39,8 +42,9 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
         <Routes>
           {/* Public Auth Routes */}
           <Route path="/login" element={<Login />} />
@@ -86,6 +90,7 @@ export const App: React.FC = () => {
         </Routes>
       </Router>
     </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

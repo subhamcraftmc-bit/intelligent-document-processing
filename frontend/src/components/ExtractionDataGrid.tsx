@@ -38,24 +38,25 @@ export const ExtractionDataGrid: React.FC<ExtractionDataGridProps> = ({
   isSaving,
   isReExtracting
 }) => {
-  const [fields, setFields] = useState<ExtractionField[]>(document.fields || []);
-  const [lineItems, setLineItems] = useState<LineItem[]>(document.extraction?.line_items || []);
+  const [fields, setFields] = useState<ExtractionField[]>(Array.isArray(document?.fields) ? document.fields : []);
+  const [lineItems, setLineItems] = useState<LineItem[]>(Array.isArray(document?.extraction?.line_items) ? document.extraction.line_items : []);
   const [filterMode, setFilterMode] = useState<'all' | 'flagged' | 'corrected'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [notes, setNotes] = useState(document.notes || '');
+  const [notes, setNotes] = useState(document?.notes || '');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [activeTab, setActiveTab] = useState<'entities' | 'table' | 'audit'>('entities');
 
   useEffect(() => {
-    setFields(document.fields || []);
-    setLineItems(document.extraction?.line_items || []);
-    setNotes(document.notes || '');
+    setFields(Array.isArray(document?.fields) ? document.fields : []);
+    setLineItems(Array.isArray(document?.extraction?.line_items) ? document.extraction.line_items : []);
+    setNotes(document?.notes || '');
     setHasUnsavedChanges(false);
   }, [document]);
 
   const handleFieldChange = (index: number, newValue: string) => {
     setFields(prev => {
       const copy = [...prev];
+      if (!copy[index]) return prev;
       copy[index] = {
         ...copy[index],
         field_value: newValue,
@@ -70,6 +71,7 @@ export const ExtractionDataGrid: React.FC<ExtractionDataGridProps> = ({
   const handleLineItemChange = (index: number, key: keyof LineItem, value: any) => {
     setLineItems(prev => {
       const copy = [...prev];
+      if (!copy[index]) return prev;
       const updated = { ...copy[index], [key]: value };
       if (key === 'quantity' || key === 'unit_price') {
         updated.total = Number(updated.quantity || 0) * Number(updated.unit_price || 0);
@@ -107,26 +109,32 @@ export const ExtractionDataGrid: React.FC<ExtractionDataGridProps> = ({
     await onSave({
       fields,
       line_items: lineItems,
-      status: document.status,
+      status: (document?.status as any) || 'needs_review',
       notes
     });
     setHasUnsavedChanges(false);
   };
 
-  const flaggedCount = fields.filter(f => f.is_flagged).length;
-  const correctedCount = fields.filter(f => f.human_corrected).length;
+  const safeFields = Array.isArray(fields) ? fields : [];
+  const safeLineItems = Array.isArray(lineItems) ? lineItems : [];
 
-  const filteredFields = fields.filter(f => {
+  const flaggedCount = safeFields.filter(f => f && f.is_flagged).length;
+  const correctedCount = safeFields.filter(f => f && f.human_corrected).length;
+
+  const filteredFields = safeFields.filter(f => {
+    if (!f) return false;
     if (filterMode === 'flagged' && !f.is_flagged) return false;
     if (filterMode === 'corrected' && !f.human_corrected) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      const matchKey = f.field_key.toLowerCase().includes(q);
+      const matchKey = (f.field_key || '').toLowerCase().includes(q);
       const matchVal = (f.field_value || '').toLowerCase().includes(q);
       return matchKey || matchVal;
     }
     return true;
   });
+
+  const docStatus = document?.status || 'needs_review';
 
   return (
     <div className="flex flex-col h-full bg-slate-900/60 rounded-2xl border border-slate-800 shadow-xl overflow-hidden backdrop-blur-md">
@@ -136,26 +144,26 @@ export const ExtractionDataGrid: React.FC<ExtractionDataGridProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-white">Document Class:</span>
             <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30">
-              {document.document_class || 'Unclassified'}
+              {document?.document_class || 'Unclassified'}
             </span>
           </div>
 
           <div className="flex items-center gap-1.5 pl-3 border-l border-slate-800">
             <span className="text-xs text-slate-400">Confidence:</span>
-            <ConfidenceBadge score={document.overall_confidence} size="md" />
+            <ConfidenceBadge score={document?.overall_confidence ?? 0.85} size="md" />
           </div>
 
           <div className="flex items-center pl-3 border-l border-slate-800">
             <span
               className={`text-xs px-2.5 py-0.5 rounded-full font-medium uppercase tracking-wider ${
-                document.status === 'verified'
+                docStatus === 'verified'
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                  : document.status === 'needs_review'
+                  : docStatus === 'needs_review'
                   ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
                   : 'bg-slate-800 text-slate-300'
               }`}
             >
-              {document.status.replace('_', ' ')}
+              {docStatus.replace('_', ' ')}
             </span>
           </div>
         </div>
@@ -420,13 +428,13 @@ export const ExtractionDataGrid: React.FC<ExtractionDataGridProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
-                  {lineItems.map((item, idx) => (
+                  {safeLineItems.map((item, idx) => (
                     <tr key={idx} className="hover:bg-slate-900/40">
                       <td className="py-2 px-3 text-slate-500 font-mono">{idx + 1}</td>
                       <td className="py-2 px-3">
                         <input
                           type="text"
-                          value={item.description}
+                          value={item?.description || ''}
                           onChange={e => handleLineItemChange(idx, 'description', e.target.value)}
                           className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-brand-500"
                         />
@@ -434,7 +442,7 @@ export const ExtractionDataGrid: React.FC<ExtractionDataGridProps> = ({
                       <td className="py-2 px-3">
                         <input
                           type="number"
-                          value={item.quantity}
+                          value={item?.quantity ?? 1}
                           onChange={e => handleLineItemChange(idx, 'quantity', parseFloat(e.target.value) || 0)}
                           className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-brand-500 font-mono"
                         />
@@ -443,13 +451,13 @@ export const ExtractionDataGrid: React.FC<ExtractionDataGridProps> = ({
                         <input
                           type="number"
                           step="0.01"
-                          value={item.unit_price}
+                          value={item?.unit_price ?? 0}
                           onChange={e => handleLineItemChange(idx, 'unit_price', parseFloat(e.target.value) || 0)}
                           className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-brand-500 font-mono"
                         />
                       </td>
                       <td className="py-2 px-3 font-mono font-semibold text-emerald-400">
-                        ${Number(item.total).toFixed(2)}
+                        ${(Number(item?.total) || 0).toFixed(2)}
                       </td>
                       <td className="py-2 px-3 text-center">
                         <button
@@ -472,16 +480,16 @@ export const ExtractionDataGrid: React.FC<ExtractionDataGridProps> = ({
         {activeTab === 'audit' && (
           <div className="space-y-2">
             <h4 className="text-xs font-semibold text-slate-300 mb-2">Audit History & Verification Trail</h4>
-            {(document.audit_logs && document.audit_logs.length > 0) ? (
+            {(document?.audit_logs && document.audit_logs.length > 0) ? (
               <div className="relative border-l-2 border-slate-800 ml-3 space-y-4 py-2">
                 {document.audit_logs.map(log => (
                   <div key={log.id} className="relative pl-6">
                     <div className="absolute -left-1.5 top-1 w-3 h-3 rounded-full bg-brand-500 ring-4 ring-slate-900" />
                     <div className="text-xs font-semibold text-slate-200">
-                      {log.action.replace('_', ' ')}
+                      {(log.action || 'system_event').replace('_', ' ')}
                     </div>
                     <div className="text-[11px] text-slate-500 font-mono">
-                      {new Date(log.created_at).toLocaleString()}
+                      {log.created_at ? new Date(log.created_at).toLocaleString() : 'Recent'}
                     </div>
                     {log.details && (
                       <pre className="mt-1 text-[11px] text-slate-400 bg-slate-950/60 p-2 rounded-lg border border-slate-800/80 overflow-x-auto">

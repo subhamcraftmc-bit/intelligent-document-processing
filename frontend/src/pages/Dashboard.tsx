@@ -20,6 +20,7 @@ import { api } from '../services/api';
 import type { DocumentRecord, AnalyticsOverview } from '../types';
 import { ConfidenceBadge } from '../components/ConfidenceBadge';
 import { ExportButton } from '../components/ExportButton';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 
 export const Dashboard: React.FC = () => {
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
@@ -315,7 +316,7 @@ export const Dashboard: React.FC = () => {
                             {doc.file_name}
                           </Link>
                           <span className="text-[11px] text-slate-500 font-mono">
-                            {(doc.file_size_bytes / 1024).toFixed(1)} KB • {doc.file_type.split('/').pop()?.toUpperCase()}
+                            {((doc.file_size_bytes || 0) / 1024).toFixed(1)} KB • {((doc.file_type || '').split('/').pop() || (doc.file_name || '').split('.').pop() || 'DOC').toUpperCase()}
                           </span>
                         </div>
                       </div>
@@ -342,7 +343,7 @@ export const Dashboard: React.FC = () => {
                       >
                         {doc.status === 'verified' && <CheckCircle2 className="w-3.5 h-3.5" />}
                         {doc.status === 'needs_review' && <AlertTriangle className="w-3.5 h-3.5" />}
-                        {doc.status.replace('_', ' ')}
+                        {(doc.status || 'needs_review').replace('_', ' ')}
                       </span>
                     </td>
 
