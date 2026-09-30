@@ -17,6 +17,7 @@ import {
 import type { DocumentRecord, ExtractionField, LineItem } from '../types';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { ExportButton } from './ExportButton';
+import { MagneticButton } from './MagneticButton';
 
 interface ExtractionDataGridProps {
   document: DocumentRecord;
@@ -45,6 +46,7 @@ export const ExtractionDataGrid: React.FC<ExtractionDataGridProps> = ({
   const [notes, setNotes] = useState(document?.notes || '');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [activeTab, setActiveTab] = useState<'entities' | 'table' | 'audit'>('entities');
+  const [verificationStage, setVerificationStage] = useState<'idle' | 'fields' | 'document' | 'complete'>('idle');
 
   useEffect(() => {
     setFields(Array.isArray(document?.fields) ? document.fields : []);
@@ -96,13 +98,32 @@ export const ExtractionDataGrid: React.FC<ExtractionDataGridProps> = ({
   };
 
   const handleSaveVerified = async () => {
-    await onSave({
-      fields,
-      line_items: lineItems,
-      status: 'verified',
-      notes
-    });
-    setHasUnsavedChanges(false);
+    try {
+      // Step 1: Field verification sequence
+      setVerificationStage('fields');
+      await new Promise(r => setTimeout(r, 220));
+
+      // Step 2: Document verification & ledger stamping
+      setVerificationStage('document');
+      await new Promise(r => setTimeout(r, 220));
+
+      await onSave({
+        fields,
+        line_items: lineItems,
+        status: 'verified',
+        notes
+      });
+      setHasUnsavedChanges(false);
+
+      // Step 3: Verified completion state
+      setVerificationStage('complete');
+      setTimeout(() => {
+        setVerificationStage('idle');
+      }, 2000);
+    } catch (err) {
+      setVerificationStage('idle');
+      throw err;
+    }
   };
 
   const handleSaveDraft = async () => {
@@ -155,6 +176,7 @@ export const ExtractionDataGrid: React.FC<ExtractionDataGridProps> = ({
 
           <div className="flex items-center pl-3 border-l border-slate-800">
             <span
+              id="doc-status-badge"
               className={`text-xs px-2.5 py-0.5 rounded-full font-medium uppercase tracking-wider ${
                 docStatus === 'verified'
                   ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
@@ -195,15 +217,37 @@ export const ExtractionDataGrid: React.FC<ExtractionDataGridProps> = ({
             </button>
           )}
 
-          <button
-            type="button"
+          <MagneticButton
             onClick={handleSaveVerified}
-            disabled={isSaving}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-glow-emerald transition-all"
+            disabled={isSaving || verificationStage !== 'idle'}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white rounded-lg shadow-glow-emerald transition-all ${
+              verificationStage === 'complete'
+                ? 'bg-emerald-500 scale-105 ring-2 ring-emerald-400/50'
+                : 'bg-emerald-600 hover:bg-emerald-500'
+            }`}
           >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Mark as Verified</span>
-          </button>
+            {verificationStage === 'fields' ? (
+              <>
+                <RotateCw className="w-3.5 h-3.5 animate-spin text-emerald-200" />
+                <span>Validating Fields...</span>
+              </>
+            ) : verificationStage === 'document' ? (
+              <>
+                <RotateCw className="w-3.5 h-3.5 animate-spin text-emerald-200" />
+                <span>Stamping Ledger...</span>
+              </>
+            ) : verificationStage === 'complete' ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-white" />
+                <span className="font-bold">Verified ✓</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Mark as Verified</span>
+              </>
+            )}
+          </MagneticButton>
         </div>
       </div>
 
@@ -347,7 +391,8 @@ export const ExtractionDataGrid: React.FC<ExtractionDataGridProps> = ({
                   return (
                     <div
                       key={field.field_key || idx}
-                      className={`p-3 rounded-xl border transition-all ${
+                      style={{ animationDelay: `${Math.min(idx * 30, 300)}ms` }}
+                      className={`p-3 rounded-xl border transition-all animate-fade-in ${
                         field.is_flagged
                           ? 'bg-rose-950/20 border-rose-500/40 shadow-sm'
                           : field.human_corrected

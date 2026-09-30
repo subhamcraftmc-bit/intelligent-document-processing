@@ -217,12 +217,12 @@ async function runBrowserQA() {
 
     // Wait for status badge to reflect "verified"
     await page.waitForFunction(() => {
-      const badge = document.querySelector('span.uppercase.tracking-wider');
+      const badge = document.querySelector('#doc-status-badge') || document.querySelector('span.uppercase.tracking-wider');
       return badge && badge.textContent?.toLowerCase().includes('verified');
     }, { timeout: 10000 });
 
     const updatedStatus = await page.evaluate(() => {
-      const badge = document.querySelector('span.uppercase.tracking-wider');
+      const badge = document.querySelector('#doc-status-badge') || document.querySelector('span.uppercase.tracking-wider');
       return badge ? badge.textContent?.trim() : '';
     });
     console.log(`16. Updated Document Status: "${updatedStatus}"`);
@@ -276,7 +276,7 @@ async function runBrowserQA() {
     console.log('19. Reloaded page (F5)');
 
     const postReloadStatus = await page.evaluate(() => {
-      const badge = document.querySelector('.uppercase.tracking-wider');
+      const badge = document.querySelector('#doc-status-badge') || document.querySelector('.uppercase.tracking-wider');
       return badge ? badge.textContent?.trim() : '';
     });
     console.log(`20. Post-reload status badge: "${postReloadStatus}"`);

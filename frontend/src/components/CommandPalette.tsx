@@ -10,13 +10,21 @@ import {
   Sparkles, 
   Keyboard, 
   X,
-  ArrowRight
+  ArrowRight,
+  Settings as SettingsIcon,
+  HelpCircle,
+  Presentation,
+  Moon,
+  Info
 } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
+import { useToast } from '../context/ToastContext';
 
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenShortcuts: () => void;
+  onStartTour?: () => void;
 }
 
 interface CommandAction {
@@ -28,8 +36,15 @@ interface CommandAction {
   badge?: string;
 }
 
-export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, onOpenShortcuts }) => {
+export const CommandPalette: React.FC<CommandPaletteProps> = ({ 
+  isOpen, 
+  onClose, 
+  onOpenShortcuts,
+  onStartTour
+}) => {
   const navigate = useNavigate();
+  const { settings, setTheme } = useSettings();
+  const toast = useToast();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +78,58 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
       category: 'Navigation',
       icon: BarChart3,
       handler: () => { navigate('/analytics'); onClose(); }
+    },
+    {
+      id: 'settings',
+      label: 'Open Settings & Preferences',
+      category: 'Navigation',
+      icon: SettingsIcon,
+      handler: () => { navigate('/settings'); onClose(); }
+    },
+    {
+      id: 'help',
+      label: 'Open Help Center & FAQ',
+      category: 'Help',
+      icon: HelpCircle,
+      handler: () => { navigate('/help'); onClose(); }
+    },
+    {
+      id: 'presentation',
+      label: 'Launch Hackathon Pitch Mode',
+      category: 'Presentation',
+      icon: Presentation,
+      badge: 'Judge Deck',
+      handler: () => { navigate('/presentation'); onClose(); }
+    },
+    {
+      id: 'tour',
+      label: 'Start Interactive Product Tour',
+      category: 'Quick Actions',
+      icon: Sparkles,
+      badge: 'Guided',
+      handler: () => { 
+        onClose(); 
+        if (onStartTour) onStartTour(); 
+      }
+    },
+    {
+      id: 'theme',
+      label: `Toggle Theme (Current: ${settings.theme})`,
+      category: 'Appearance',
+      icon: Moon,
+      handler: () => {
+        const nextTheme = settings.theme === 'dark' ? 'light' : 'dark';
+        setTheme(nextTheme);
+        toast.info(`Theme toggled to ${nextTheme}.`);
+        onClose();
+      }
+    },
+    {
+      id: 'about',
+      label: 'About CineForge Architecture & Tech Stack',
+      category: 'Information',
+      icon: Info,
+      handler: () => { navigate('/about'); onClose(); }
     },
     {
       id: 'demo',
@@ -117,14 +184,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-28 px-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-28 px-4 bg-slate-950/80 backdrop-blur-md animate-fade-in"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Command Palette"
     >
       <div 
-        className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col"
+        className="liquid-glass border border-brand-500/40 rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Search Input Bar */}
@@ -139,7 +206,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Type a command or search actions..."
+            placeholder="Type a command or search action..."
             className="w-full bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none"
           />
           <kbd className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] text-slate-400">
@@ -164,7 +231,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
                   onMouseEnter={() => setSelectedIndex(idx)}
                   className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer text-xs transition-colors ${
                     isSelected
-                      ? 'bg-brand-500/20 text-white border border-brand-500/40'
+                      ? 'bg-brand-500/20 text-white border border-brand-500/40 shadow-sm'
                       : 'text-slate-300 hover:bg-slate-800/60'
                   }`}
                 >

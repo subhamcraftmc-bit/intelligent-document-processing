@@ -209,17 +209,17 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
         onDragOver={handleDrag}
         onDrop={handleDrop}
         onClick={() => !uploading && fileInputRef.current?.click()}
-        className={`relative border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center transition-all duration-200 overflow-hidden ${
+        className={`relative border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center transition-all duration-300 overflow-hidden liquid-glass ${
           uploading 
             ? 'cursor-wait border-brand-500/60 bg-slate-950/90'
             : dragActive
-            ? 'cursor-pointer border-brand-400 bg-brand-500/10 scale-[1.01]'
+            ? 'cursor-pointer liquid-dropzone-active'
             : 'cursor-pointer border-slate-800 hover:border-brand-500/50 bg-slate-900/40 hover:bg-slate-900/70'
         } backdrop-blur-md`}
       >
         {/* Laser Scanner Animation Beam during active processing */}
         {uploading && (
-          <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-brand-400 to-transparent shadow-[0_0_15px_rgba(99,102,241,0.8)] animate-laser-scan pointer-events-none" />
+          <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-brand-400 to-transparent shadow-[0_0_20px_rgba(99,102,241,0.9)] animate-laser-scan pointer-events-none" />
         )}
 
         <input
@@ -233,22 +233,33 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
         />
 
         <div className="flex flex-col items-center justify-center max-w-md mx-auto pointer-events-none">
-          <div className="w-16 h-16 rounded-2xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-400 mb-4 shadow-glow-brand">
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 mb-4 ${
+            dragActive
+              ? 'bg-brand-500/30 text-brand-300 scale-110 shadow-glow-brand ring-4 ring-brand-500/20'
+              : 'bg-brand-500/10 border border-brand-500/20 text-brand-400 shadow-glow-brand'
+          }`}>
             {uploading ? (
               <Loader2 className="w-8 h-8 animate-spin text-brand-400" />
+            ) : dragActive ? (
+              <Sparkles className="w-8 h-8 text-brand-300 animate-pulse" />
             ) : (
               <UploadCloud className="w-8 h-8" />
             )}
           </div>
 
-          <h3 className="text-base sm:text-lg font-semibold text-white mb-1">
+          <h3 className="text-base sm:text-lg font-bold text-white mb-1 tracking-tight">
             {uploading 
-              ? 'Analyzing document layout with Gemini 2.0...'
-              : <>Drop documents here, or <span className="text-brand-400 underline">browse files</span></>
+              ? 'Analyzing document layout with Gemini 2.0 Vision...'
+              : dragActive
+              ? 'Release to Ingest into Liquid Glass...'
+              : <>Drop documents here, or <span className="text-brand-400 underline decoration-brand-500/50">browse files</span></>
             }
           </h3>
           <p className="text-xs sm:text-sm text-slate-400 mb-4">
-            Supports Invoices, Receipts, Contracts, Resumes, and Identity Proofs • Paste screenshots with <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] text-slate-300">Ctrl+V</kbd>
+            {dragActive
+              ? 'Multimodal OCR layout parser will automatically analyze tables and fields'
+              : <>Supports Invoices, Receipts, Contracts, Resumes, and IDs • Paste with <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] text-slate-300">Ctrl+V</kbd></>
+            }
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500">

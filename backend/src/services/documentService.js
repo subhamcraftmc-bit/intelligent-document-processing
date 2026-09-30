@@ -612,13 +612,49 @@ export const documentService = {
   async updateDocumentFields(documentId, userId, { fields = [], line_items, status, notes }) {
     const now = new Date().toISOString();
 
-    if (isSupabaseConfigured() && supabaseAdmin && !mockStore.documents.has(documentId)) {
-      // 1. Update individual fields
+    // 1. If in mockStore, update in memory
+    if (mockStore.documents.has(documentId)) {
+      const mockDoc = mockStore.documents.get(documentId);
+      if (mockDoc) {
+        if (status) mockDoc.status = status;
+        if (notes !== undefined) mockDoc.notes = notes;
+        mockDoc.updated_at = now;
+        mockStore.documents.set(documentId, mockDoc);
+      }
+
+      fields.forEach(f => {
+        let matched = null;
+        if (f.id && mockStore.fields.has(f.id)) {
+          matched = mockStore.fields.get(f.id);
+        } else {
+          matched = Array.from(mockStore.fields.values()).find(
+            item => item.document_id === documentId && item.field_key === f.field_key
+          );
+        }
+
+        if (matched) {
+          matched.field_value = f.field_value;
+          matched.human_corrected = true;
+          matched.is_flagged = false;
+          matched.updated_at = now;
+          mockStore.fields.set(matched.id, matched);
+        }
+      });
+
+      if (line_items && mockStore.extractions.has(documentId)) {
+        const ext = mockStore.extractions.get(documentId);
+        ext.extracted_data.line_items = line_items;
+        mockStore.extractions.set(documentId, ext);
+      }
+    }
+
+    // 2. If Supabase configured, update database tables
+    if (isSupabaseConfigured() && supabaseAdmin) {
       for (const field of fields) {
         const updatePayload = {
           field_value: field.field_value,
           human_corrected: true,
-          is_flagged: false, // cleared on manual correction
+          is_flagged: false,
           updated_at: now
         };
 
@@ -637,7 +673,6 @@ export const documentService = {
         }
       }
 
-      // 2. Update line items in extractions if provided
       if (line_items) {
         const { data: currentExtraction } = await supabaseAdmin
           .from('document_extractions')
@@ -657,7 +692,6 @@ export const documentService = {
         }
       }
 
-      // 3. Update document status
       const docUpdates = { updated_at: now };
       if (status) docUpdates.status = status;
       if (notes !== undefined) docUpdates.notes = notes;
@@ -673,56 +707,9 @@ export const documentService = {
         entityId: documentId,
         details: { fields_count: fields.length, status, notes }
       });
-
-      return await this.getDocumentById(documentId, userId);
     }
 
-    // Mock store updates
-    const doc = mockStore.documents.get(documentId);
-    if (!doc || doc.user_id !== userId) {
-      return null;
-    }
-
-    if (status) doc.status = status;
-    if (notes !== undefined) doc.notes = notes;
-    doc.updated_at = now;
-    mockStore.documents.set(documentId, doc);
-
-    // Update fields
-    fields.forEach(f => {
-      let matched = null;
-      if (f.id && mockStore.fields.has(f.id)) {
-        matched = mockStore.fields.get(f.id);
-      } else {
-        matched = Array.from(mockStore.fields.values()).find(
-          item => item.document_id === documentId && item.field_key === f.field_key
-        );
-      }
-
-      if (matched) {
-        matched.field_value = f.field_value;
-        matched.human_corrected = true;
-        matched.is_flagged = false;
-        matched.updated_at = now;
-        mockStore.fields.set(matched.id, matched);
-      }
-    });
-
-    // Update line items in extraction
-    if (line_items && mockStore.extractions.has(documentId)) {
-      const ext = mockStore.extractions.get(documentId);
-      ext.extracted_data.line_items = line_items;
-      mockStore.extractions.set(documentId, ext);
-    }
-
-    this.logAudit({
-      userId,
-      action: status === 'verified' ? 'DOCUMENT_VERIFIED' : 'FIELD_CORRECTED',
-      entityId: documentId,
-      details: { fields_count: fields.length, status, notes }
-    });
-
-    return this.getDocumentById(documentId, userId);
+    return await this.getDocumentById(documentId, userId);
   },
 
   /**
