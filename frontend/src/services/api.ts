@@ -9,17 +9,17 @@ import { DEMO_USER, DEMO_DOCUMENTS, DEMO_ANALYTICS } from './demoData';
 export const getApiBaseUrl = (): string => {
   let raw = (import.meta.env.VITE_API_BASE_URL || '').trim();
 
-  // If in browser on Vercel or any remote production domain, and VITE_API_BASE_URL is relative or default:
-  // Automatically target the deployed backend on Render
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    const isRemoteProduction = host.includes('vercel.app') || (host !== 'localhost' && host !== '127.0.0.1');
-    if (isRemoteProduction && (!raw || raw === '/api' || raw.startsWith('sb_'))) {
-      return 'https://idp-backend-vl5r.onrender.com/api';
-    }
+  // Strip any accidental markdown link formatting e.g. [https://...](https://...) -> https://...
+  const markdownMatch = raw.match(/\[([^\]]+)\]\(([^)]+)\)/);
+  if (markdownMatch) {
+    raw = markdownMatch[2] || markdownMatch[1];
   }
 
-  // Fallback for local development or missing configuration
+  // Remove any stray brackets
+  raw = raw.replace(/[\[\]]/g, '').trim();
+
+  // If in browser on Vercel or any remote production domain, and VITE_API_BASE_URL is relative (/api) or unset:
+  // Using relative /api leverages Vercel's vercel.json proxy rewrites directly to Render seamlessly without CORS
   if (!raw || raw.startsWith('sb_')) {
     raw = '/api';
   }

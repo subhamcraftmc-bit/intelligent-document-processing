@@ -112,17 +112,19 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({ onUploadSuccess 
       clearInterval(progressTimer);
       setUploadProgress(100);
 
-      setProcessedDocs(result.documents);
+      const docs = Array.isArray(result?.documents) ? result.documents : [];
+      setProcessedDocs(docs);
       setSelectedFiles([]);
       setStatusMessage({
         type: 'success',
-        text: `Successfully processed ${result.total} document(s) with Gemini 2.0 Multimodal Vision.`
+        text: `Successfully processed ${result?.total || docs.length} document(s) with Gemini 2.0 Multimodal Vision.`
       });
 
-      if (onUploadSuccess) {
-        onUploadSuccess(result.documents);
+      if (onUploadSuccess && docs.length > 0) {
+        onUploadSuccess(docs);
       }
     } catch (err: any) {
+      clearInterval(progressTimer);
       setStatusMessage({
         type: 'error',
         text: err.message || 'Upload and extraction failed.'

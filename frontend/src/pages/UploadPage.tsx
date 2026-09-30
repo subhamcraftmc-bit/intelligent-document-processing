@@ -16,7 +16,7 @@ export const UploadPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleUploadSuccess = (docs: DocumentRecord[]) => {
-    if (docs.length === 1) {
+    if (Array.isArray(docs) && docs.length === 1 && docs[0]?.id) {
       // If single document uploaded, jump directly into split-screen verification
       navigate(`/documents/${docs[0].id}`);
     }
