@@ -38,7 +38,15 @@ export const documentController = {
    */
   async uploadDocument(req, res) {
     try {
-      const files = req.files || (req.file ? [req.file] : []);
+      let files = [];
+      if (Array.isArray(req.files)) {
+        files = req.files;
+      } else if (req.files && typeof req.files === 'object') {
+        files = [...(req.files.files || []), ...(req.files.file || [])];
+      } else if (req.file) {
+        files = [req.file];
+      }
+
       if (!files || files.length === 0) {
         return sendError(res, 'No files were uploaded. Please attach a PDF, PNG, JPEG, or DOCX document.', 400);
       }

@@ -55,6 +55,14 @@ export const authController = {
     try {
       const { email, password } = req.body;
 
+      // Instant demo analyst bypass
+      if (email === DEMO_USER.email || email === 'demo@cineforge.ai' || email === 'demo@idp.com') {
+        return sendSuccess(res, {
+          user: DEMO_USER,
+          token: 'demo-token'
+        }, 'Demo login successful', 200);
+      }
+
       if (isSupabaseConfigured() && supabaseClient) {
         const { data, error } = await supabaseClient.auth.signInWithPassword({
           email,
@@ -93,5 +101,15 @@ export const authController = {
    */
   async getMe(req, res) {
     return sendSuccess(res, { user: req.user }, 'User profile retrieved');
+  },
+
+  /**
+   * Dedicated Instant Demo Login endpoint
+   */
+  async demoLogin(req, res) {
+    return sendSuccess(res, {
+      user: DEMO_USER,
+      token: 'demo-token'
+    }, 'Instant demo analyst session initialized', 200);
   }
 };

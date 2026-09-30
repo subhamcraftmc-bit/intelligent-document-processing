@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://idp-backend-vl5r.onrender.com/api/$1"
+    },
+    {
+      "source": "/health",
+      "destination": "https://idp-backend-vl5r.onrender.com/api/health"
+    },
+    {
+      "source": "/extract",
+      "destination": "https://idp-backend-vl5r.onrender.com/api/extract"
+    },
+    {
+      "source": "/((?!assets/|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

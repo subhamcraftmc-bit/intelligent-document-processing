@@ -12,7 +12,7 @@ router.get('/files/:filename', documentController.serveLocalFile);
 
 // All document management routes require authentication
 router.get('/', requireAuth, validateQuery(DocumentQuerySchema), documentController.getDocuments);
-router.post('/upload', requireAuth, upload.array('files', 10), handleMulterErrors, documentController.uploadDocument);
+router.post('/upload', requireAuth, upload.fields([{ name: 'files', maxCount: 10 }, { name: 'file', maxCount: 10 }]), handleMulterErrors, documentController.uploadDocument);
 router.get('/:id', requireAuth, documentController.getDocumentById);
 router.post('/:id/extract', requireAuth, documentController.extractDocument);
 router.put('/:id/fields', requireAuth, documentController.updateDocumentFields);

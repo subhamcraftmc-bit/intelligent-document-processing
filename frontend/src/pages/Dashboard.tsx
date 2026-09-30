@@ -25,6 +25,7 @@ export const Dashboard: React.FC = () => {
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [classFilter, setClassFilter] = useState('all');
@@ -34,6 +35,7 @@ export const Dashboard: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const [docsResp, analyticsResp] = await Promise.all([
         api.documents.list({
           page,
@@ -48,8 +50,9 @@ export const Dashboard: React.FC = () => {
       setDocuments(docsResp.documents);
       setTotalPages(docsResp.pagination.totalPages || 1);
       setOverview(analyticsResp.overview);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load dashboard data:', err);
+      setError(err.message || 'Unable to connect to document services. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -102,6 +105,24 @@ export const Dashboard: React.FC = () => {
           <span>Process New Documents</span>
         </Link>
       </div>
+
+      {/* Error Alert with Retry Action */}
+      {error && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={loadData}
+            className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold transition-colors shrink-0 flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Retry Connection</span>
+          </button>
+        </div>
+      )}
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
