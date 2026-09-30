@@ -175,7 +175,7 @@ export const Register: React.FC = () => {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={googleSubmitting}
-              className="w-full py-2.5 px-4 text-xs font-medium rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 transition-all flex items-center justify-center gap-2.5 shadow-sm disabled:opacity-50"
+              className="w-full py-2.5 px-4 text-xs font-medium rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 transition-all flex items-center justify-center gap-2.5 shadow-sm disabled:opacity-50 btn-interactive"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
@@ -190,7 +190,7 @@ export const Register: React.FC = () => {
             <button
               type="button"
               onClick={handleDemoSignIn}
-              className="w-full py-2.5 px-4 text-xs font-semibold rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-slate-700/80 transition-all flex items-center justify-center gap-2 group"
+              className="w-full py-2.5 px-4 text-xs font-semibold rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-slate-700/80 transition-all flex items-center justify-center gap-2 group btn-interactive"
             >
               <ShieldCheck className="w-4 h-4 text-brand-400 group-hover:scale-110 transition-transform" />
               <span>Instant Demo Sign In (Preloaded Data)</span>

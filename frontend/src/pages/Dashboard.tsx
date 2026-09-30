@@ -197,9 +197,9 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Search & Filter Controls */}
-      <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         {/* Search */}
-        <form onSubmit={handleSearchSubmit} className="w-full md:w-80 relative">
+        <form onSubmit={handleSearchSubmit} className="w-full lg:w-80 relative">
           <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -211,7 +211,7 @@ export const Dashboard: React.FC = () => {
         </form>
 
         {/* Filter Dropdowns & Status Chips */}
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
           {/* Status Tabs */}
           <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
             {['all', 'needs_review', 'verified'].map(status => (
@@ -277,22 +277,45 @@ export const Dashboard: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-800/80">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <RefreshCw className="w-6 h-6 animate-spin text-brand-400" />
-                      <span>Loading documents archive...</span>
-                    </div>
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse border-b border-slate-800/40">
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-slate-800 shrink-0" />
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          <div className="h-3 bg-slate-800 rounded w-36" />
+                          <div className="h-2 bg-slate-800/60 rounded w-20" />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4"><div className="h-5 bg-slate-800 rounded-lg w-20" /></td>
+                    <td className="py-3.5 px-4"><div className="h-5 bg-slate-800 rounded-full w-24" /></td>
+                    <td className="py-3.5 px-4"><div className="h-5 bg-slate-800 rounded w-16" /></td>
+                    <td className="py-3.5 px-4"><div className="h-3 bg-slate-800 rounded w-28" /></td>
+                    <td className="py-3.5 px-4 text-right"><div className="h-6 bg-slate-800 rounded w-20 ml-auto" /></td>
+                  </tr>
+                ))
               ) : documents.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-500">
-                    <FolderOpen className="w-10 h-10 mx-auto text-slate-600 mb-2" />
-                    <p className="text-sm font-medium text-slate-300">No documents found</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Upload your first invoice, receipt, or contract to trigger Gemini extraction.
-                    </p>
+                  <td colSpan={6} className="py-16 text-center text-slate-500">
+                    <div className="max-w-sm mx-auto space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-slate-400 mx-auto shadow-inner">
+                        <FolderOpen className="w-6 h-6 text-brand-400" />
+                      </div>
+                      <p className="text-sm font-semibold text-slate-200">No documents found in this view</p>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        {search || statusFilter !== 'all' || classFilter !== 'all'
+                          ? 'No records match your active search filters. Try clearing filters or adjusting your search term.'
+                          : 'Upload invoices, receipts, or contracts to begin automated multimodal entity extraction.'}
+                      </p>
+                      <Link
+                        to="/upload"
+                        className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-500 text-white shadow-glow-brand transition-all btn-interactive mt-2"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Process New Document</span>
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -366,7 +389,7 @@ export const Dashboard: React.FC = () => {
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           to={`/documents/${doc.id}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors btn-interactive"
                         >
                           <span>Review</span>
                           <ArrowUpRight className="w-3.5 h-3.5" />
@@ -378,7 +401,7 @@ export const Dashboard: React.FC = () => {
                           type="button"
                           onClick={() => handleDelete(doc.id, doc.file_name)}
                           title="Delete document"
-                          className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                          className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors btn-interactive"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

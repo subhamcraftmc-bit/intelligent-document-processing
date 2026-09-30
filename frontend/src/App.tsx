@@ -28,7 +28,7 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#07090e]">
+    <div className="min-h-screen flex flex-col bg-[#07090e] w-full overflow-x-hidden">
       <Navbar />
       <main className="flex-1">
         <ErrorBoundary>{children}</ErrorBoundary>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, RefreshCw, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, RefreshCw, FileText, CheckCircle2, AlertCircle, Eye, Table } from 'lucide-react';
 import { api } from '../services/api';
 import { DEMO_DOCUMENTS } from '../services/demoData';
 import type { DocumentRecord, ExtractionField, LineItem, DocumentStatus } from '../types';
@@ -17,6 +17,7 @@ export const DocumentDetail: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isReExtracting, setIsReExtracting] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [mobileTab, setMobileTab] = useState<'data' | 'document'>('data');
 
   const loadDocument = async () => {
     if (!id) return;
@@ -102,7 +103,7 @@ export const DocumentDetail: React.FC = () => {
         </p>
         <Link
           to="/dashboard"
-          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-500 text-white shadow-glow-brand"
+          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-500 text-white shadow-glow-brand btn-interactive"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Return to Dashboard</span>
@@ -114,23 +115,24 @@ export const DocumentDetail: React.FC = () => {
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col p-4 sm:p-6 space-y-4">
       {/* Top Breadcrumb & Status Bar */}
-      <div className="flex items-center justify-between shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => navigate('/dashboard')}
-            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors btn-interactive"
             title="Back to Dashboard"
+            aria-label="Back to Dashboard"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
 
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-sm sm:text-base font-bold text-white truncate max-w-md">
+              <h1 className="text-sm sm:text-base font-bold text-white truncate max-w-xs sm:max-w-md">
                 {document?.file_name || 'Document Workspace'}
               </h1>
-              <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+              <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 hidden sm:inline-block">
                 ID: {document?.id ? document.id.slice(0, 8) : 'unknown'}...
               </span>
             </div>
@@ -140,19 +142,47 @@ export const DocumentDetail: React.FC = () => {
           </div>
         </div>
 
+        {/* Mobile View Toggle Switch (Hidden on lg desktop) */}
+        <div className="flex lg:hidden items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+          <button
+            type="button"
+            onClick={() => setMobileTab('data')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition-all btn-interactive ${
+              mobileTab === 'data'
+                ? 'bg-brand-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Table className="w-3.5 h-3.5" />
+            <span>Extracted Data & HITL</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab('document')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition-all btn-interactive ${
+              mobileTab === 'document'
+                ? 'bg-brand-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Original Doc</span>
+          </button>
+        </div>
+
         {/* Toast Alert */}
         {toastMessage && (
           <div
-            className={`px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 border animate-in fade-in slide-in-from-top-2 duration-200 ${
+            className={`px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 border animate-fade-in ${
               toastMessage.type === 'success'
                 ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
                 : 'bg-rose-500/15 border-rose-500/30 text-rose-300'
             }`}
           >
             {toastMessage.type === 'success' ? (
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             ) : (
-              <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+              <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
             )}
             <span>{toastMessage.text}</span>
           </div>
@@ -164,25 +194,48 @@ export const DocumentDetail: React.FC = () => {
         fallbackTitle="Workspace Rendering Issue"
         fallbackDescription="A visual glitch occurred while displaying this document preview or data table. Your edits and records are safe."
       >
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0 overflow-hidden">
-          {/* Left Column: Original Document PDF / Image Viewer */}
-          <div className="h-full min-h-[400px]">
-            <DocumentViewer
-              fileUrl={document.file_url}
-              fileType={document.file_type}
-              fileName={document.file_name}
-            />
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {/* Desktop: Side-by-side Grid */}
+          <div className="hidden lg:grid grid-cols-2 gap-4 h-full">
+            <div className="h-full min-h-[400px]">
+              <DocumentViewer
+                fileUrl={document.file_url}
+                fileType={document.file_type}
+                fileName={document.file_name}
+              />
+            </div>
+            <div className="h-full min-h-[400px]">
+              <ExtractionDataGrid
+                document={document}
+                onSave={handleSaveFields}
+                onReExtract={handleReExtract}
+                isSaving={isSaving}
+                isReExtracting={isReExtracting}
+              />
+            </div>
           </div>
 
-          {/* Right Column: Editable Extraction Data Grid */}
-          <div className="h-full min-h-[400px]">
-            <ExtractionDataGrid
-              document={document}
-              onSave={handleSaveFields}
-              onReExtract={handleReExtract}
-              isSaving={isSaving}
-              isReExtracting={isReExtracting}
-            />
+          {/* Mobile/Tablet: Tabbed display to avoid squishing */}
+          <div className="lg:hidden h-full">
+            {mobileTab === 'document' ? (
+              <div className="h-full min-h-[400px]">
+                <DocumentViewer
+                  fileUrl={document.file_url}
+                  fileType={document.file_type}
+                  fileName={document.file_name}
+                />
+              </div>
+            ) : (
+              <div className="h-full min-h-[400px]">
+                <ExtractionDataGrid
+                  document={document}
+                  onSave={handleSaveFields}
+                  onReExtract={handleReExtract}
+                  isSaving={isSaving}
+                  isReExtracting={isReExtracting}
+                />
+              </div>
+            )}
           </div>
         </div>
       </ErrorBoundary>
