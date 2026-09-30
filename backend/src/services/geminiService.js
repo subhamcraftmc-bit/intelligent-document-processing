@@ -64,7 +64,7 @@ export const geminiService = {
     let response;
     try {
       response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: 'gemini-2.0-flash',
         contents: [{ role: 'user', parts }],
         config: {
           systemInstruction: SYSTEM_INSTRUCTION,
@@ -76,7 +76,7 @@ export const geminiService = {
     } catch (modelErr) {
       if (modelErr.message?.includes('not found') || modelErr.message?.includes('404')) {
         response = await ai.models.generateContent({
-          model: 'gemini-2.0-flash',
+          model: 'gemini-1.5-flash',
           contents: [{ role: 'user', parts }],
           config: {
             systemInstruction: SYSTEM_INSTRUCTION,
