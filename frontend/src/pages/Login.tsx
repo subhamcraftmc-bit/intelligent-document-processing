@@ -32,6 +32,7 @@ export const Login: React.FC = () => {
     setGoogleSubmitting(true);
     try {
       await signInWithGoogle();
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Google sign in failed');
       setGoogleSubmitting(false);
